@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="utf-8"?>
+<navigation xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/nav_graph"
+    app:startDestination="@id/loginFragment">
+
+    <fragment
+        android:id="@+id/loginFragment"
+        android:name="com.example.dogapp.ui.login.LoginFragment"
+        android:label="Login"
+        tools:layout="@layout/fragment_login" />
+
+    <fragment
+        android:id="@+id/homeFragment"
+        android:name="com.example.dogapp.ui.home.HomeFragment"
+        android:label="Administrador de Citas"
+        tools:layout="@layout/fragment_home" />
+
+    <fragment
+        android:id="@+id/nuevaCitaFragment"
+        android:name="com.example.dogapp.ui.nuevacita.NuevaCitaFragment"
+        android:label="Nueva Cita"
+        tools:layout="@layout/fragment_nueva_cita" />
+
+    <fragment
+        android:id="@+id/detalleFragment"
+        android:name="com.example.dogapp.ui.detalle.DetalleFragment"
+        android:label="Detalle"
+        tools:layout="@layout/fragment_detalle" />
+
+    <fragment
+        android:id="@+id/editarCitaFragment"
+        android:name="com.example.dogapp.ui.editarcita.EditarCitaFragment"
+        android:label="Editar Cita"
+        tools:layout="@layout/fragment_editar_cita" />
+
+</navigation>
