@@ -3,4 +3,11 @@
     <!-- TODO: Remove or change this placeholder text -->
     <string name="hello_blank_fragment">Hello blank fragment</string>
     <string name="login_title">Login DogApp</string>
+    <string name="login_brand">DogApp</string>
+    <string name="login_dog_description">Cabeza de perro de DogApp</string>
+    <string name="login_fingerprint_description">Ingresar con huella digital</string>
+    <string name="biometric_title">Autenticación con Biometría</string>
+    <string name="biometric_subtitle">Ingrese su huella digital</string>
+    <string name="biometric_cancel">Cancelar</string>
+    <string name="biometric_unavailable">No se puede iniciar la autenticación. Comprueba que el dispositivo tenga un sensor disponible y una huella registrada.</string>
 </resources>
