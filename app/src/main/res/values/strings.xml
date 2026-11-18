@@ -10,4 +10,8 @@
     <string name="biometric_subtitle">Ingrese su huella digital</string>
     <string name="biometric_cancel">Cancelar</string>
     <string name="biometric_unavailable">No se puede iniciar la autenticación. Comprueba que el dispositivo tenga un sensor disponible y una huella registrada.</string>
+    <string name="titulo_nueva_cita">Nueva Cita</string>
+    <string name="volver_home">Volver al Home</string>
+    <string name="hint_nombre_mascota">Nombre de la Mascota</string>
+    <string name="hint_raza">Raza</string>
 </resources>
