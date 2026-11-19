@@ -10,4 +10,6 @@
     <string name="biometric_subtitle">Ingrese su huella digital</string>
     <string name="biometric_cancel">Cancelar</string>
     <string name="biometric_unavailable">No se puede iniciar la autenticación. Comprueba que el dispositivo tenga un sensor disponible y una huella registrada.</string>
+    <string name="home_title">Administrador\nde Citas</string>
+    <string name="home_add_appointment">Crear nueva cita</string>
 </resources>
