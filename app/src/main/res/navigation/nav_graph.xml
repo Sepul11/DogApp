@@ -15,7 +15,17 @@
         android:id="@+id/homeFragment"
         android:name="com.example.dogapp.ui.home.HomeFragment"
         android:label="Administrador de Citas"
-        tools:layout="@layout/fragment_home" />
+        tools:layout="@layout/fragment_home">
+
+        <action
+            android:id="@+id/action_homeFragment_to_nuevaCitaFragment"
+            app:destination="@id/nuevaCitaFragment" />
+
+        <action
+            android:id="@+id/action_homeFragment_to_detalleFragment"
+            app:destination="@id/detalleFragment" />
+
+    </fragment>
 
     <fragment
         android:id="@+id/nuevaCitaFragment"
@@ -27,7 +37,13 @@
         android:id="@+id/detalleFragment"
         android:name="com.example.dogapp.ui.detalle.DetalleFragment"
         android:label="Detalle"
-        tools:layout="@layout/fragment_detalle" />
+        tools:layout="@layout/fragment_detalle">
+
+        <argument
+            android:name="citaId"
+            app:argType="integer" />
+
+    </fragment>
 
     <fragment
         android:id="@+id/editarCitaFragment"

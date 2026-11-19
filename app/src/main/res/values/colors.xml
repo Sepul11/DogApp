@@ -4,4 +4,5 @@
     <color name="white">#FFFFFFFF</color>
     <color name="login_background">#303030</color>
     <color name="login_text">#FFFFFF</color>
+    <color name="appointment_pink">#F05861</color>
 </resources>
