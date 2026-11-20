@@ -2,37 +2,40 @@
 package com.example.dogapp.ui.nuevacita
 
 import android.os.Bundle
+import android.text.Editable
+import android.text.TextWatcher
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.ArrayAdapter
-import android.widget.AutoCompleteTextView
 import android.widget.Toast
 import androidx.fragment.app.Fragment
-import androidx.lifecycle.lifecycleScope
-import com.example.dogapp.R
-import com.example.dogapp.data.remote.RetrofitClient
-import kotlinx.coroutines.launch
-import android.text.Editable
-import android.text.TextWatcher
-import com.google.android.material.button.MaterialButton
-import com.google.android.material.textfield.TextInputEditText
-import com.example.dogapp.data.local.CitaEntity
-import com.example.dogapp.data.local.DogAppDatabase
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.withContext
+import androidx.fragment.app.viewModels
+import androidx.navigation.fragment.findNavController
+import com.example.dogapp.databinding.FragmentNuevaCitaBinding
+import com.example.dogapp.model.Cita
+import com.example.dogapp.viewmodel.CitaViewModel
+
 class NuevaCitaFragment : Fragment() {
+
+    private var _binding: FragmentNuevaCitaBinding? = null
+    private val binding get() = _binding!!
+
+    private val citaViewModel: CitaViewModel by viewModels()
+
+    private var guardando = false
 
     override fun onCreateView(
         inflater: LayoutInflater,
         container: ViewGroup?,
         savedInstanceState: Bundle?
     ): View {
-        return inflater.inflate(
-            R.layout.fragment_nueva_cita,
+        _binding = FragmentNuevaCitaBinding.inflate(
+            inflater,
             container,
             false
         )
+        return binding.root
     }
 
     override fun onViewCreated(
@@ -41,19 +44,16 @@ class NuevaCitaFragment : Fragment() {
     ) {
         super.onViewCreated(view, savedInstanceState)
 
-        val campoRaza = view.findViewById<AutoCompleteTextView>(
-            R.id.actvRaza
-        )
+        configurarSintomas()
+        configurarValidaciones()
+        configurarObservadores()
+        configurarBotones()
 
-        campoRaza.threshold = 2
+        citaViewModel.cargarRazas()
+    }
 
-        cargarRazas(campoRaza)
-
-        val campoSintomas = view.findViewById<AutoCompleteTextView>(
-            R.id.actvSintomas
-        )
-
-        val listaSintomas = listOf(
+    private fun configurarSintomas() {
+        val sintomas = listOf(
             "Solo duerme",
             "No come",
             "Fractura extremidad",
@@ -62,63 +62,30 @@ class NuevaCitaFragment : Fragment() {
             "Bota demasiado pelo"
         )
 
-        val adaptadorSintomas = ArrayAdapter(
+        val adaptador = ArrayAdapter(
             requireContext(),
             android.R.layout.simple_dropdown_item_1line,
-            listaSintomas
+            sintomas
         )
 
-        campoSintomas.setAdapter(adaptadorSintomas)
-        campoSintomas.threshold = 0
+        binding.actvSintomas.setAdapter(adaptador)
+        binding.actvSintomas.threshold = 0
 
-        campoSintomas.setOnClickListener {
-            campoSintomas.showDropDown()
+        binding.actvSintomas.setOnClickListener {
+            binding.actvSintomas.showDropDown()
         }
+    }
 
-        val campoMascota = view.findViewById<TextInputEditText>(
-            R.id.etNombreMascota
-        )
-
-        val campoPropietario = view.findViewById<TextInputEditText>(
-            R.id.etNombrePropietario
-        )
-
-        val campoTelefono = view.findViewById<TextInputEditText>(
-            R.id.etTelefono
-        )
-
-        val botonGuardar = view.findViewById<MaterialButton>(
-            R.id.btnGuardarCita
-        )
-
-        fun validarCampos() {
-            val mascotaCompleta =
-                !campoMascota.text.isNullOrBlank()
-
-            val razaCompleta =
-                !campoRaza.text.isNullOrBlank()
-
-            val propietarioCompleto =
-                !campoPropietario.text.isNullOrBlank()
-
-            val telefonoCompleto =
-                !campoTelefono.text.isNullOrBlank()
-
-            botonGuardar.isEnabled =
-                mascotaCompleta &&
-                        razaCompleta &&
-                        propietarioCompleto &&
-                        telefonoCompleto
-        }
+    private fun configurarValidaciones() {
+        binding.actvRaza.threshold = 2
 
         val observadorCampos = object : TextWatcher {
-
             override fun beforeTextChanged(
                 s: CharSequence?,
                 start: Int,
                 count: Int,
                 after: Int
-            ) {}
+            ) = Unit
 
             override fun onTextChanged(
                 s: CharSequence?,
@@ -129,170 +96,118 @@ class NuevaCitaFragment : Fragment() {
                 validarCampos()
             }
 
-            override fun afterTextChanged(s: Editable?) {}
+            override fun afterTextChanged(s: Editable?) = Unit
         }
 
-        campoMascota.addTextChangedListener(observadorCampos)
-        campoRaza.addTextChangedListener(observadorCampos)
-        campoPropietario.addTextChangedListener(observadorCampos)
-        campoTelefono.addTextChangedListener(observadorCampos)
+        binding.etNombreMascota.addTextChangedListener(observadorCampos)
+        binding.actvRaza.addTextChangedListener(observadorCampos)
+        binding.etNombrePropietario.addTextChangedListener(observadorCampos)
+        binding.etTelefono.addTextChangedListener(observadorCampos)
 
         validarCampos()
-
-        // 9. Validar síntomas al presionar Guardar Cita
-
-
-        botonGuardar.setOnClickListener {
-
-            val sintomaSeleccionado =
-                campoSintomas.text.toString().trim()
-
-            if (sintomaSeleccionado.isEmpty()) {
-
-                Toast.makeText(
-                    requireContext(),
-                    "Selecciona un síntoma",
-                    Toast.LENGTH_SHORT
-                ).show()
-
-            } else {
-
-                botonGuardar.isEnabled = false
-
-                val nombreMascota =
-                    campoMascota.text.toString().trim()
-
-                val razaSeleccionada =
-                    campoRaza.text.toString().trim()
-
-                val nombrePropietario =
-                    campoPropietario.text.toString().trim()
-
-                val telefono =
-                    campoTelefono.text.toString().trim()
-
-                val contextoApp = requireContext().applicationContext
-
-                viewLifecycleOwner.lifecycleScope.launch {
-
-                    try {
-
-                        // Obtener la imagen correspondiente a la raza
-                        val partesRaza = razaSeleccionada
-                            .lowercase()
-                            .split(" ")
-                            .filter { it.isNotBlank() }
-
-                        val respuestaImagen = when {
-
-                            partesRaza.size == 1 -> {
-                                RetrofitClient.api.obtenerImagenRaza(
-                                    partesRaza[0]
-                                )
-                            }
-
-                            partesRaza.size == 2 -> {
-                                RetrofitClient.api.obtenerImagenSubraza(
-                                    partesRaza[0],
-                                    partesRaza[1]
-                                )
-                            }
-
-                            else -> null
-                        }
-
-                        val imagenUrl = if (
-                            respuestaImagen?.status == "success"
-                        ) {
-                            respuestaImagen.message
-                        } else {
-                            ""
-                        }
-
-                        // Crear la cita con la URL de su imagen
-                        val nuevaCita = CitaEntity(
-                            nombreMascota = nombreMascota,
-                            raza = razaSeleccionada,
-                            nombrePropietario = nombrePropietario,
-                            telefono = telefono,
-                            sintoma = sintomaSeleccionado,
-                            imagenUrl = imagenUrl
-                        )
-
-                        // Guardar en Room
-                        withContext(Dispatchers.IO) {
-
-                            val baseDatos =
-                                DogAppDatabase.getDatabase(contextoApp)
-
-                            baseDatos.citaDao().insertarCita(nuevaCita)
-                        }
-
-                        Toast.makeText(
-                            requireContext(),
-                            "Cita guardada correctamente",
-                            Toast.LENGTH_SHORT
-                        ).show()
-
-                    } catch (e: Exception) {
-
-                        botonGuardar.isEnabled = true
-
-                        Toast.makeText(
-                            requireContext(),
-                            "No se pudo guardar la cita",
-                            Toast.LENGTH_SHORT
-                        ).show()
-                    }
-                }
-            }
-        }
-
-
-
-
-
     }
 
-    private fun cargarRazas(
-        campoRaza: AutoCompleteTextView
-    ) {
-        viewLifecycleOwner.lifecycleScope.launch {
-            try {
-                val respuesta =
-                    RetrofitClient.api.obtenerRazas()
+    private fun validarCampos() {
+        val camposCompletos =
+            !binding.etNombreMascota.text.isNullOrBlank() &&
+                    !binding.actvRaza.text.isNullOrBlank() &&
+                    !binding.etNombrePropietario.text.isNullOrBlank() &&
+                    !binding.etTelefono.text.isNullOrBlank()
 
-                if (respuesta.status == "success") {
+        binding.btnGuardarCita.isEnabled =
+            camposCompletos && !guardando
+    }
 
-                    val razas = respuesta.message.flatMap {
-                            (raza, subrazas) ->
+    private fun configurarObservadores() {
+        citaViewModel.razas.observe(viewLifecycleOwner) { razas ->
+            val adaptador = ArrayAdapter(
+                requireContext(),
+                android.R.layout.simple_dropdown_item_1line,
+                razas
+            )
 
-                        if (subrazas.isEmpty()) {
-                            listOf(raza)
-                        } else {
-                            subrazas.map { subraza ->
-                                "$raza $subraza"
-                            }
-                        }
-                    }.sorted()
+            binding.actvRaza.setAdapter(adaptador)
+        }
 
-                    val adaptador = ArrayAdapter(
-                        requireContext(),
-                        android.R.layout.simple_dropdown_item_1line,
-                        razas
-                    )
-
-                    campoRaza.setAdapter(adaptador)
-                }
-
-            } catch (e: Exception) {
+        citaViewModel.citaGuardada.observe(viewLifecycleOwner) { guardada ->
+            if (guardada == true) {
+                guardando = false
 
                 Toast.makeText(
                     requireContext(),
-                    "No se pudieron cargar las razas",
+                    "Cita guardada correctamente",
                     Toast.LENGTH_SHORT
                 ).show()
+
+                citaViewModel.consumirCitaGuardada()
+
+                findNavController().popBackStack()
             }
         }
+
+        citaViewModel.errorNuevaCita.observe(viewLifecycleOwner) { error ->
+            if (!error.isNullOrBlank()) {
+                guardando = false
+                validarCampos()
+
+                Toast.makeText(
+                    requireContext(),
+                    error,
+                    Toast.LENGTH_SHORT
+                ).show()
+
+                citaViewModel.consumirErrorNuevaCita()
+            }
+        }
+    }
+
+    private fun configurarBotones() {
+        binding.btnVolver.setOnClickListener {
+            findNavController().popBackStack()
+        }
+
+        binding.btnGuardarCita.setOnClickListener {
+            guardarCita()
+        }
+    }
+
+    private fun guardarCita() {
+        if (guardando) return
+
+        val sintoma = binding.actvSintomas.text
+            .toString()
+            .trim()
+
+        if (sintoma.isEmpty()) {
+            Toast.makeText(
+                requireContext(),
+                "Selecciona un síntoma",
+                Toast.LENGTH_SHORT
+            ).show()
+            return
+        }
+
+        val nuevaCita = Cita(
+            nombreMascota = binding.etNombreMascota.text
+                .toString().trim(),
+            raza = binding.actvRaza.text
+                .toString().trim(),
+            nombrePropietario = binding.etNombrePropietario.text
+                .toString().trim(),
+            telefono = binding.etTelefono.text
+                .toString().trim(),
+            sintoma = sintoma,
+            imagenUrl = ""
+        )
+
+        guardando = true
+        validarCampos()
+
+        citaViewModel.guardarCita(nuevaCita)
+    }
+
+    override fun onDestroyView() {
+        super.onDestroyView()
+        _binding = null
     }
 }

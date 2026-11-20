@@ -1,5 +1,4 @@
-
-package com.example.dogapp.data.remote
+package com.example.dogapp.webservice
 
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
