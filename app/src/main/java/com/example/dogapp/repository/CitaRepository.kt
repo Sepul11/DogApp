@@ -1,3 +1,4 @@
+
 package com.example.dogapp.repository
 
 import android.content.Context
@@ -21,6 +22,12 @@ class CitaRepository(context: Context) {
     suspend fun obtenerCitaPorId(citaId: Int): Cita? {
         return withContext(Dispatchers.IO) {
             citaDao.obtenerCitaPorId(citaId)
+        }
+    }
+
+    suspend fun insertarCita(cita: Cita) {
+        withContext(Dispatchers.IO) {
+            citaDao.insertarCita(cita)
         }
     }
 }
