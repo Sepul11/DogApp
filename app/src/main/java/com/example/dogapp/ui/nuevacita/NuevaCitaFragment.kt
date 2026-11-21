@@ -1,60 +1,204 @@
+
 package com.example.dogapp.ui.nuevacita
 
 import android.os.Bundle
-import androidx.fragment.app.Fragment
+import android.text.Editable
+import android.text.TextWatcher
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.ArrayAdapter
+import android.widget.Toast
+import androidx.fragment.app.Fragment
+import androidx.fragment.app.viewModels
+import androidx.navigation.fragment.findNavController
+import com.example.dogapp.databinding.FragmentNuevaCitaBinding
+import com.example.dogapp.model.Cita
+import com.example.dogapp.viewmodel.CitaViewModel
 import com.example.dogapp.R
 
-// TODO: Rename parameter arguments, choose names that match
-// the fragment initialization parameters, e.g. ARG_ITEM_NUMBER
-private const val ARG_PARAM1 = "param1"
-private const val ARG_PARAM2 = "param2"
-
-/**
- * A simple [Fragment] subclass.
- * Use the [NuevaCitaFragment.newInstance] factory method to
- * create an instance of this fragment.
- */
 class NuevaCitaFragment : Fragment() {
-    // TODO: Rename and change types of parameters
-    private var param1: String? = null
-    private var param2: String? = null
 
-    override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState)
-        arguments?.let {
-            param1 = it.getString(ARG_PARAM1)
-            param2 = it.getString(ARG_PARAM2)
+    private var _binding: FragmentNuevaCitaBinding? = null
+    private val binding get() = _binding!!
+
+    private val citaViewModel: CitaViewModel by viewModels()
+
+    override fun onCreateView(
+        inflater: LayoutInflater,
+        container: ViewGroup?,
+        savedInstanceState: Bundle?
+    ): View {
+        _binding = FragmentNuevaCitaBinding.inflate(
+            inflater,
+            container,
+            false
+        )
+        return binding.root
+    }
+
+    override fun onViewCreated(
+        view: View,
+        savedInstanceState: Bundle?
+    ) {
+        super.onViewCreated(view, savedInstanceState)
+
+        configurarSintomas()
+        configurarValidaciones()
+        configurarObservadores()
+        configurarBotones()
+
+        citaViewModel.cargarRazas()
+    }
+
+    private fun configurarSintomas() {
+        val sintomas = resources.getStringArray(R.array.sintomas)
+
+        val adaptador = ArrayAdapter(
+            requireContext(),
+            android.R.layout.simple_dropdown_item_1line,
+            sintomas
+        )
+
+        binding.actvSintomas.setAdapter(adaptador)
+        binding.actvSintomas.threshold = 0
+
+        binding.actvSintomas.setOnClickListener {
+            binding.actvSintomas.showDropDown()
         }
     }
 
-    override fun onCreateView(
-        inflater: LayoutInflater, container: ViewGroup?,
-        savedInstanceState: Bundle?
-    ): View? {
-        // Inflate the layout for this fragment
-        return inflater.inflate(R.layout.fragment_nueva_cita, container, false)
+    private fun configurarValidaciones() {
+        binding.actvRaza.threshold = 2
+
+        val observadorCampos = object : TextWatcher {
+            override fun beforeTextChanged(
+                s: CharSequence?,
+                start: Int,
+                count: Int,
+                after: Int
+            ) = Unit
+
+            override fun onTextChanged(
+                s: CharSequence?,
+                start: Int,
+                before: Int,
+                count: Int
+            ) {
+                validarCampos()
+            }
+
+            override fun afterTextChanged(s: Editable?) = Unit
+        }
+
+        binding.etNombreMascota.addTextChangedListener(observadorCampos)
+        binding.actvRaza.addTextChangedListener(observadorCampos)
+        binding.etNombrePropietario.addTextChangedListener(observadorCampos)
+        binding.etTelefono.addTextChangedListener(observadorCampos)
+
+        validarCampos()
     }
 
-    companion object {
-        /**
-         * Use this factory method to create a new instance of
-         * this fragment using the provided parameters.
-         *
-         * @param param1 Parameter 1.
-         * @param param2 Parameter 2.
-         * @return A new instance of fragment NuevaCitaFragment.
-         */
-        // TODO: Rename and change types and number of parameters
-        @JvmStatic
-        fun newInstance(param1: String, param2: String) =
-            NuevaCitaFragment().apply {
-                arguments = Bundle().apply {
-                    putString(ARG_PARAM1, param1)
-                    putString(ARG_PARAM2, param2)
-                }
+    private fun validarCampos() {
+        val camposCompletos =
+            !binding.etNombreMascota.text.isNullOrBlank() &&
+                    !binding.actvRaza.text.isNullOrBlank() &&
+                    !binding.etNombrePropietario.text.isNullOrBlank() &&
+                    !binding.etTelefono.text.isNullOrBlank()
+
+        binding.btnGuardarCita.isEnabled =
+            camposCompletos && citaViewModel.guardando.value != true
+    }
+
+    private fun configurarObservadores() {
+        citaViewModel.guardando.observe(viewLifecycleOwner) {
+            validarCampos()
+        }
+        citaViewModel.razas.observe(viewLifecycleOwner) { razas ->
+            val adaptador = ArrayAdapter(
+                requireContext(),
+                android.R.layout.simple_dropdown_item_1line,
+                razas
+            )
+
+            binding.actvRaza.setAdapter(adaptador)
+        }
+
+        citaViewModel.citaGuardada.observe(viewLifecycleOwner) { guardada ->
+            if (guardada == true) {
+
+                Toast.makeText(
+                    requireContext(),
+                    getString(R.string.cita_guardada_correctamente),
+                    Toast.LENGTH_SHORT
+                ).show()
+
+                citaViewModel.consumirCitaGuardada()
+
+                findNavController().popBackStack()
             }
+        }
+
+        citaViewModel.errorNuevaCita.observe(viewLifecycleOwner) { error ->
+            if (!error.isNullOrBlank()) {
+                validarCampos()
+
+                Toast.makeText(
+                    requireContext(),
+                    error,
+                    Toast.LENGTH_SHORT
+                ).show()
+
+                citaViewModel.consumirErrorNuevaCita()
+            }
+        }
+    }
+
+    private fun configurarBotones() {
+        binding.btnVolver.setOnClickListener {
+            findNavController().popBackStack()
+        }
+
+        binding.btnGuardarCita.setOnClickListener {
+            guardarCita()
+        }
+    }
+
+    private fun guardarCita() {
+
+        if (citaViewModel.guardando.value == true) return
+
+        val sintoma = binding.actvSintomas.text
+            .toString()
+            .trim()
+
+        if (sintoma.isEmpty()) {
+            Toast.makeText(
+                requireContext(),
+                getString(R.string.selecciona_sintoma),
+                Toast.LENGTH_SHORT
+            ).show()
+            return
+        }
+
+        val nuevaCita = Cita(
+            nombreMascota = binding.etNombreMascota.text
+                .toString().trim(),
+            raza = binding.actvRaza.text
+                .toString().trim(),
+            nombrePropietario = binding.etNombrePropietario.text
+                .toString().trim(),
+            telefono = binding.etTelefono.text
+                .toString().trim(),
+            sintoma = sintoma,
+            imagenUrl = ""
+        )
+
+        citaViewModel.guardarCita(nuevaCita)
+    }
+
+    override fun onDestroyView() {
+        super.onDestroyView()
+        _binding = null
     }
 }

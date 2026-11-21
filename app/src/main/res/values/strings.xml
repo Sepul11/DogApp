@@ -1,7 +1,9 @@
+
 <resources>
     <string name="app_name">DogApp</string>
     <!-- TODO: Remove or change this placeholder text -->
     <string name="hello_blank_fragment">Hello blank fragment</string>
+
     <string name="login_title">Login DogApp</string>
     <string name="login_brand">DogApp</string>
     <string name="login_dog_description">Cabeza de perro de DogApp</string>
@@ -10,6 +12,37 @@
     <string name="biometric_subtitle">Ingrese su huella digital</string>
     <string name="biometric_cancel">Cancelar</string>
     <string name="biometric_unavailable">No se puede iniciar la autenticación. Comprueba que el dispositivo tenga un sensor disponible y una huella registrada.</string>
+
+    <!-- HU 2: Home -->
     <string name="home_title">Administrador\nde Citas</string>
     <string name="home_add_appointment">Crear nueva cita</string>
+
+    <!-- HU 3: Nueva Cita -->
+    <string name="titulo_nueva_cita">Nueva Cita</string>
+    <string name="volver_home">Volver al Home</string>
+    <string name="hint_nombre_mascota">Nombre de la Mascota</string>
+    <string name="hint_raza">Raza</string>
+    <string name="hint_nombre_propietario">Nombre del Propietario</string>
+    <string name="hint_telefono">Teléfono</string>
+    <string name="hint_sintomas">Síntomas</string>
+    <string name="guardar_cita">Guardar Cita</string>
+
+    <string name="selecciona_sintoma">Selecciona un síntoma</string>
+    <string name="cita_guardada_correctamente">Cita guardada correctamente</string>
+
+    <string-array name="sintomas">
+        <item>Solo duerme</item>
+        <item>No come</item>
+        <item>Fractura extremidad</item>
+        <item>Tiene pulgas</item>
+        <item>Tiene garrapatas</item>
+        <item>Bota demasiado pelo</item>
+    </string-array>
+
+    <string name="error_cargar_razas">No se pudieron cargar las razas</string>
+    <string name="error_catalogo_no_disponible">No hay un catálogo de razas disponible. Vuelve a abrir Nueva Cita.</string>
+    <string name="error_raza_invalida">Selecciona una raza válida de las sugerencias</string>
+    <string name="error_obtener_imagen">No se pudo obtener la imagen. Intenta guardar nuevamente</string>
+    <string name="error_guardar_cita">No se pudo guardar la cita</string>
+
 </resources>
