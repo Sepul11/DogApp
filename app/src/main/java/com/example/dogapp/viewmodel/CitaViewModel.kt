@@ -12,6 +12,7 @@ import com.example.dogapp.repository.CitaRepository
 import com.example.dogapp.repository.RazaRepository
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.launch
+import com.example.dogapp.R
 
 class CitaViewModel(
     application: Application
@@ -35,6 +36,10 @@ class CitaViewModel(
     private val _errorNuevaCita = MutableLiveData<String?>()
     val errorNuevaCita: LiveData<String?> = _errorNuevaCita
 
+    private val _guardando = MutableLiveData(false)
+
+    val guardando: LiveData<Boolean> = _guardando
+
     fun cargarCitas() {
         viewModelScope.launch {
             try {
@@ -55,12 +60,36 @@ class CitaViewModel(
                 throw e
             } catch (e: Exception) {
                 Log.e("CitaViewModel", "Error al cargar las razas", e)
-                _errorNuevaCita.value = "No se pudieron cargar las razas"
+                _errorNuevaCita.value = getApplication<Application>()
+                    .getString(R.string.error_cargar_razas)
             }
         }
     }
 
     fun guardarCita(cita: Cita) {
+
+        if (_guardando.value == true) return
+
+        val razasDisponibles = _razas.value
+
+        if (razasDisponibles.isNullOrEmpty()) {
+            _errorNuevaCita.value = getApplication<Application>()
+                .getString(R.string.error_catalogo_no_disponible)
+            return
+        }
+
+        val razaValidada = razasDisponibles.firstOrNull { raza ->
+            raza.equals(cita.raza.trim(), ignoreCase = true)
+        }
+
+        if (razaValidada == null) {
+            _errorNuevaCita.value = getApplication<Application>()
+                .getString(R.string.error_raza_invalida)
+            return
+        }
+
+        _guardando.value = true
+
         viewModelScope.launch {
             _citaGuardada.value = false
             _errorNuevaCita.value = null
@@ -68,7 +97,15 @@ class CitaViewModel(
             try {
                 // Consultar la imagen antes de guardar
                 val imagenUrl = try {
-                    razaRepository.obtenerImagenRaza(cita.raza)
+                    val url = razaRepository
+                        .obtenerImagenRaza(razaValidada)
+                        .trim()
+
+                    check(url.isNotEmpty()) {
+                        "La API devolvió una URL vacía"
+                    }
+
+                    url
                 } catch (e: CancellationException) {
                     throw e
                 } catch (e: Exception) {
@@ -77,11 +114,16 @@ class CitaViewModel(
                         "No se pudo obtener la imagen de la raza",
                         e
                     )
-                    ""
+
+                    _errorNuevaCita.value = getApplication<Application>()
+                        .getString(R.string.error_obtener_imagen)
+
+                    return@launch
                 }
 
                 // Crear una copia con la imagen obtenida
                 val citaConImagen = cita.copy(
+                    raza = razaValidada,
                     imagenUrl = imagenUrl
                 )
 
@@ -94,7 +136,10 @@ class CitaViewModel(
                 throw e
             } catch (e: Exception) {
                 Log.e("CitaViewModel", "Error al guardar la cita", e)
-                _errorNuevaCita.value = "No se pudo guardar la cita"
+                _errorNuevaCita.value = getApplication<Application>()
+                    .getString(R.string.error_guardar_cita)
+            } finally {
+                _guardando.value = false
             }
         }
     }

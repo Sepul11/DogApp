@@ -15,6 +15,7 @@ import androidx.navigation.fragment.findNavController
 import com.example.dogapp.databinding.FragmentNuevaCitaBinding
 import com.example.dogapp.model.Cita
 import com.example.dogapp.viewmodel.CitaViewModel
+import com.example.dogapp.R
 
 class NuevaCitaFragment : Fragment() {
 
@@ -22,8 +23,6 @@ class NuevaCitaFragment : Fragment() {
     private val binding get() = _binding!!
 
     private val citaViewModel: CitaViewModel by viewModels()
-
-    private var guardando = false
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -53,14 +52,7 @@ class NuevaCitaFragment : Fragment() {
     }
 
     private fun configurarSintomas() {
-        val sintomas = listOf(
-            "Solo duerme",
-            "No come",
-            "Fractura extremidad",
-            "Tiene pulgas",
-            "Tiene garrapatas",
-            "Bota demasiado pelo"
-        )
+        val sintomas = resources.getStringArray(R.array.sintomas)
 
         val adaptador = ArrayAdapter(
             requireContext(),
@@ -115,10 +107,13 @@ class NuevaCitaFragment : Fragment() {
                     !binding.etTelefono.text.isNullOrBlank()
 
         binding.btnGuardarCita.isEnabled =
-            camposCompletos && !guardando
+            camposCompletos && citaViewModel.guardando.value != true
     }
 
     private fun configurarObservadores() {
+        citaViewModel.guardando.observe(viewLifecycleOwner) {
+            validarCampos()
+        }
         citaViewModel.razas.observe(viewLifecycleOwner) { razas ->
             val adaptador = ArrayAdapter(
                 requireContext(),
@@ -131,11 +126,10 @@ class NuevaCitaFragment : Fragment() {
 
         citaViewModel.citaGuardada.observe(viewLifecycleOwner) { guardada ->
             if (guardada == true) {
-                guardando = false
 
                 Toast.makeText(
                     requireContext(),
-                    "Cita guardada correctamente",
+                    getString(R.string.cita_guardada_correctamente),
                     Toast.LENGTH_SHORT
                 ).show()
 
@@ -147,7 +141,6 @@ class NuevaCitaFragment : Fragment() {
 
         citaViewModel.errorNuevaCita.observe(viewLifecycleOwner) { error ->
             if (!error.isNullOrBlank()) {
-                guardando = false
                 validarCampos()
 
                 Toast.makeText(
@@ -172,7 +165,8 @@ class NuevaCitaFragment : Fragment() {
     }
 
     private fun guardarCita() {
-        if (guardando) return
+
+        if (citaViewModel.guardando.value == true) return
 
         val sintoma = binding.actvSintomas.text
             .toString()
@@ -181,7 +175,7 @@ class NuevaCitaFragment : Fragment() {
         if (sintoma.isEmpty()) {
             Toast.makeText(
                 requireContext(),
-                "Selecciona un síntoma",
+                getString(R.string.selecciona_sintoma),
                 Toast.LENGTH_SHORT
             ).show()
             return
@@ -199,9 +193,6 @@ class NuevaCitaFragment : Fragment() {
             sintoma = sintoma,
             imagenUrl = ""
         )
-
-        guardando = true
-        validarCampos()
 
         citaViewModel.guardarCita(nuevaCita)
     }

@@ -10,15 +10,18 @@ Agenda local de citas para mascotas, desarrollada como miniproyecto del curso De
 - Login implementa autenticación biométrica y navegación a Home retirando Login de la pila. Se comprobó manualmente que Atrás desde Home sale al escritorio.
 - Home tiene encabezado, botón flotante hacia Nueva Cita y tarjetas con nombre, síntoma, turno e imagen mediante Glide. La selección navega a Detalle enviando `citaId`; la pantalla de Detalle aún no presenta la cita.
 - La lectura local está conectada mediante `CitaDao` → `CitaRepository` → `CitaViewModel` → LiveData → Home. Home consulta al entrar y al regresar mediante `onStart()`.
-- Room, Data Binding, Glide, Retrofit y el convertidor Gson están configurados. Tener Retrofit disponible no significa que el consumo de API esté implementado: `webservice` conserva únicamente su `.gitkeep`.
-- La creación, el detalle, la eliminación y la edición completos siguen pendientes de integración. No duplicar la base compartida para implementarlos.
+- Nueva Cita utiliza Data Binding, consulta razas y subrazas mediante Retrofit y permite autocompletar desde dos letras. El ViewModel valida la raza contra el catálogo y obtiene la URL de imagen antes de insertar mediante el Repository compartido. Solo tras confirmar la escritura regresa a Home.
+- El ViewModel impide guardados simultáneos mediante `guardando: LiveData<Boolean>`. El botón observa ese estado y presenta texto e icono grises cuando está deshabilitado y blancos cuando está habilitado.
+- Room, Glide, Retrofit y el convertidor Gson están configurados y utilizados. `webservice` contiene `DogApiService` y `RetrofitClient`; las URL y rutas se centralizan en `utils/Constants.kt`.
+- Esta descripción corresponde a la implementación de la rama de HU-3 y sus ajustes locales; no implica que el PR ya esté integrado en `main`. El detalle completo, la eliminación y la edición siguen pendientes. No duplicar la base compartida para implementarlos.
 - Los `.gitkeep` conservan paquetes vacíos en Git; pueden eliminarse cuando esos paquetes tengan archivos reales.
 
 ### Validación realizada y pendiente
 
 - El responsable de HU-2 reportó compilación correcta y visualización de una cita insertada manualmente en la base local mediante Database Inspector, además de navegación hacia Detalle.
-- Esta prueba valida lectura y presentación de datos locales; no demuestra el guardado desde HU-3 ni la consulta de la API.
-- Pendiente: probar Crear → Home, persistencia tras reiniciar la app y recepción/uso del ID correcto en Detalle. No marcar estas pruebas como aprobadas por el solo hecho de compilar.
+- Posteriormente, el responsable reportó compilación y funcionamiento del consumo de API y del flujo de creación, además de la verificación manual final de los ajustes de HU-3. Son comprobaciones manuales reportadas por el responsable, no pruebas automatizadas.
+- Al documentar la verificación en el PR, distinguir creación normal, raza inválida, catálogo no disponible, fallo al obtener imagen, pulsaciones rápidas, rotación y persistencia. Un mensaje de catálogo no disponible no prueba el manejo del fallo de imagen: para este último se necesita haber cargado primero el catálogo.
+- Sigue pendiente la recepción y el uso del ID correcto en la implementación de Detalle. Abrir esa pantalla vacía no demuestra que haya recuperado la cita correcta. No marcar pruebas como aprobadas por el solo hecho de compilar.
 
 ## Historias de usuario
 
@@ -73,20 +76,20 @@ Responsabilidades por paquete:
 - `repository`: acceso a Room y a la API.
 - `data`: DAO y configuración Room.
 - `model`: entidad `Cita` y respuestas de la API.
-- `utils`: constantes compartidas con una necesidad concreta; actualmente `Constants.NAME_BD` define el nombre de la base.
+- `utils`: constantes compartidas con una necesidad concreta; `Constants` define `NAME_BD`, `BASE_URL` y los endpoints de razas e imágenes.
 - `webservice`: interfaz Retrofit y configuración del cliente. Sustituye al paquete vacío antes llamado `network`; no mantener ambos para la misma responsabilidad.
 
 Base existente y piezas previstas:
 
 | Paquete | Existente | Pendiente |
 | --- | --- | --- |
-| `ui.adapter` / `ui.viewholder` | `CitaAdapter`, `CitaViewHolder` | Validación con citas creadas por HU-3 |
-| `viewmodel` | `LoginViewModel`, `CitaViewModel` con lectura de citas | Operaciones necesarias para las demás HU |
-| `repository` | `CitaRepository` con consultas locales | Escrituras locales y `RazaRepository` |
-| `model` | Entidad Room `Cita` | `RazasResponse`, `ImagenResponse`, según el JSON de la API |
-| `data` | `CitaDao`, `DogAppDB` | Insertar, actualizar y eliminar según cada HU |
-| `utils` | `Constants` con `NAME_BD` | Añadir constantes solo cuando sean necesarias |
-| `webservice` | Paquete vacío con `.gitkeep` | `DogApiService`, `RetrofitClient` |
+| `ui.adapter` / `ui.viewholder` | `CitaAdapter`, `CitaViewHolder` con Glide | Reutilizar la presentación sin acceso directo a Room/API |
+| `viewmodel` | `LoginViewModel`, `CitaViewModel` con consultas, validación de raza y guardado | Operaciones de detalle, eliminación y edición |
+| `repository` | `CitaRepository` con consultas e inserción; `RazaRepository` con razas e imágenes | Actualización y eliminación locales |
+| `model` | Entidad Room `Cita`; `DogBreedsResponse`, `DogImageResponse` | Conservar los contratos al ampliar las HU |
+| `data` | `CitaDao` con consultas e inserción; `DogAppDB` | Actualizar y eliminar según cada HU |
+| `utils` | `Constants` con nombre de base, URL y endpoints | Añadir constantes solo cuando sean necesarias |
+| `webservice` | `DogApiService`, `RetrofitClient` | Reutilizar el cliente existente |
 
 ### Evidencia de clase y decisiones del equipo
 
@@ -96,6 +99,8 @@ Los proyectos de referencia se consultan en el entorno de clase; no forman parte
 - Clase 9: bajo `app/src/main/java/com/example/clase8/`, `webservice/ApiService.kt`, `RetrofitClient.kt` y `ApiUtils.kt` definen el acceso Retrofit; `model/ProductModelResponse.kt` representa la respuesta; `InventoryRepository` consulta el servicio y `InventoryViewModel` publica sus resultados. `view/fragment/AddItemFragment.kt` muestra una URL con `Glide.with(...).load(...).into(...)`.
 - Clase 8 usa `utils/Constants.kt` para `NAME_BD`; clase 9 también centraliza constantes de red. El paquete `webservice` adopta el nombre observado en clase 9.
 - Son decisiones del equipo: separar `CitaRepository` y `RazaRepository` (el ejemplo de clase 9 usa un Repository para ambos accesos), devolver `List<Cita>` en lugar de `MutableList`, navegar por ID mediante callbacks del adaptador y cargar imágenes en el ViewHolder. No se presentan como exigencias del profesor.
+- Clase 9 separa la creación del servicio en `ApiUtils`. DogApp la mantiene en `RetrofitClient.api`, reutilizando el cliente y el servicio del `object`; no necesita un tercer archivo para cubrir esa responsabilidad. Los modelos actuales usan `message` y `status`, iguales a las claves JSON, sin `@SerializedName`. La centralización de `BASE_URL` y los endpoints sí sigue la convención observada en `Constants` del profesor.
+- La validación contra el catálogo, la protección contra guardados simultáneos, el selector visual del botón y la política de no guardar sin URL son decisiones del equipo para completar el comportamiento de DogApp; no se atribuyen al código del profesor.
 
 ## Cómo aplicar MVVM
 
@@ -103,12 +108,13 @@ Flujo de operaciones: **Fragment → ViewModel → Repository → Room/API**. La
 
 - El Fragment lee campos, registra eventos, muestra datos/mensajes y navega. No consulta directamente el DAO, la base de datos o Retrofit.
 - El Adapter y el ViewHolder presentan las citas y notifican la selección al Fragment; no realizan operaciones de datos.
-- `CitaViewModel` coordina las operaciones y validaciones, usa `viewModelScope` y expone LiveData. Actualmente publica `citas`; los resultados de escritura se añadirán al integrar las HU correspondientes. No conserva referencias a Fragments, vistas o bindings.
+- `CitaViewModel` coordina las operaciones y validaciones y usa `viewModelScope`. Publica `citas`, `razas`, `guardando`, `citaGuardada` y `errorNuevaCita` mediante LiveData con MutableLiveData privados. No conserva referencias a Fragments, vistas o bindings.
 - `CitaRepository` concentra las operaciones locales. `RazaRepository` concentra las consultas de razas e imágenes. Room y la red se usan de forma asíncrona, sin bloquear el hilo principal.
 - Cada Fragment de citas obtiene su instancia de `CitaViewModel` con `by viewModels()`. No asumir que son la misma instancia: los datos actuales se recuperan desde Room a través del ViewModel y el Repository.
 - Observar LiveData con `viewLifecycleOwner` y liberar la referencia al binding en `onDestroyView`.
 - Solo mostrar éxito y navegar cuando Room confirme la escritura; ante un error de escritura, conservar el formulario y comunicar el fallo según el acuerdo de esa HU.
 - En HU-2 se aplazaron los indicadores de carga y los mensajes visuales de error/lista vacía: no son criterios explícitos de esa HU. Actualmente los errores de consulta se registran en Logcat, sin interfaz adicional. El indicador de progreso sí aparece en el ejemplo del profesor, pero no se exige por ello en Home.
+- En HU-3, `guardando` protege la operación en el ViewModel antes de lanzar la corrutina y se libera en `finally`, también ante error o cancelación. El Fragment observa ese estado para habilitar el botón; un fallo de carga del catálogo no libera una inserción en curso. Esta protección cubre solicitudes simultáneas en la misma instancia del ViewModel, no identifica citas iguales creadas en momentos diferentes.
 
 Antes de conectar las pantallas, acordar en la tarea compartida los nombres, parámetros y resultados de las operaciones del ViewModel y de los Repository. No crear contratos diferentes para cada Fragment.
 
@@ -116,13 +122,14 @@ Antes de conectar las pantallas, acordar en la tarea compartida los nombres, par
 
 - Reutilizar [Cita](app/src/main/java/com/example/dogapp/model/Cita.kt), [CitaDao](app/src/main/java/com/example/dogapp/data/CitaDao.kt), [DogAppDB](app/src/main/java/com/example/dogapp/data/DogAppDB.kt), [CitaRepository](app/src/main/java/com/example/dogapp/repository/CitaRepository.kt) y [CitaViewModel](app/src/main/java/com/example/dogapp/viewmodel/CitaViewModel.kt). Ampliar estas piezas para el guardado; no crear entidades, bases o capas locales paralelas.
 - La tabla actual es `citas` y el nombre de base es `dogapp_database`, definido en `Constants.NAME_BD`. Revisar conjuntamente cualquier cambio de esquema o versión de Room.
-- El DAO y el Repository ya ofrecen `suspend fun obtenerCitas(): List<Cita>` y `suspend fun obtenerCitaPorId(citaId: Int): Cita?`. El ViewModel ofrece `cargarCitas()` y `citas: LiveData<List<Cita>>`. Conservar estas firmas al integrar HU-3.
+- El DAO y el Repository ofrecen `suspend fun obtenerCitas(): List<Cita>`, `suspend fun obtenerCitaPorId(citaId: Int): Cita?` y `suspend fun insertarCita(cita: Cita)` con retorno Unit. La inserción no modifica el ID del objeto recibido; Home obtiene el ID autogenerado al consultar Room.
+- El ViewModel conserva `cargarCitas()` y `citas: LiveData<List<Cita>>`. Para HU-3 ofrece `cargarRazas()`, `guardarCita(cita: Cita)`, `consumirCitaGuardada()` y `consumirErrorNuevaCita()`. El Fragment consume los resultados antes de repetir acciones como navegar o mostrar el mismo mensaje tras recrear la vista.
 - La lista se consulta por ID ascendente. `List` permite lectura sin exponer operaciones de modificación de la colección; no significa que la base sea inmutable. Insertar o quitar elementos de una colección en memoria no escribe en Room.
 - Se utilizan consultas puntuales suspendidas, no Flow. La LiveData del ViewModel recibe el resultado de cada consulta; Home vuelve a consultar en `onStart()`. Cambiar a consultas observables requiere acuerdo del equipo.
 - HU-3 implementa el servicio Retrofit, los modelos de respuesta y `RazaRepository`. El ViewModel coordina la obtención de la URL y el guardado local; el Fragment no accede directamente a la API ni al DAO.
 - HU-3 persiste `imagenUrl` junto con la cita. Home recibe ese dato a través de Room y lo muestra con Glide; no solicita otra imagen aleatoria al mostrar cada tarjeta.
 - El guardado correcto regresa al Home existente para que recargue sus citas. No se necesita enviar una lista entre Fragments ni compartir la misma instancia de ViewModel.
-- El contrato detallado de escritura se mantiene en el documento compartido del equipo. Las operaciones de guardado aún no están implementadas en esta base.
+- El contrato detallado se mantiene en el documento compartido del equipo. La inserción ya está implementada; las operaciones futuras de HU-4/HU-5 deben ampliar estas piezas y coordinar sus firmas, sin crear otra entidad o base.
 
 ## Navegación
 
@@ -153,21 +160,32 @@ Los límites de los campos y el catálogo de síntomas deben seguir las historia
 - `nombreMascota`: texto, máximo 15 caracteres.
 - `nombrePropietario`: texto, máximo 30 caracteres.
 - `telefono`: solo dígitos, máximo 10 caracteres; no convertirlo a número.
-- `raza`: autocompletado desde dos letras con el listado obtenido de la API.
-- `sintoma`: Solo duerme, No come, Fractura extremidad, Tiene pulgas, Tiene garrapatas o Bota demasiado pelo. Centralizar este catálogo en recursos XML.
-- El botón de alta se habilita cuando nombre, raza, propietario y teléfono están diligenciados. Si falta elegir síntoma, mostrar “Selecciona un síntoma”.
+- `raza`: autocompletado desde dos letras con el listado obtenido de la API. Antes de guardar, el ViewModel exige un catálogo disponible y una coincidencia completa, ignorando mayúsculas y espacios exteriores. Persiste el nombre del catálogo; escribir cualquier texto no lo convierte en una raza válida.
+- `sintoma`: Solo duerme, No come, Fractura extremidad, Tiene pulgas, Tiene garrapatas o Bota demasiado pelo. El catálogo está centralizado en `R.array.sintomas`, dentro de [strings.xml](app/src/main/res/values/strings.xml).
+- El botón de alta se habilita cuando nombre, raza, propietario y teléfono están diligenciados y no hay un guardado en curso. La pertenencia de la raza al catálogo se valida al intentar guardar. Si falta elegir síntoma, mostrar “Selecciona un síntoma”.
+- El texto y el icono del botón cambian de gris deshabilitado a blanco habilitado mediante [guardar_cita_contenido.xml](app/src/main/res/color/guardar_cita_contenido.xml), manteniendo el texto bold y el fondo rosado.
 - El turno mostrado es el ID autogenerado de Room, no la posición del RecyclerView. Al editar se conserva el ID y el síntoma; la HU de edición no incluye cambiar el síntoma.
 
 ## API de perros
 
 - Listado de razas: `https://dog.ceo/api/breeds/list/all`
 - Imagen aleatoria de una raza: `https://dog.ceo/api/breed/{breed}/images/random`
+- Imagen aleatoria de una subraza: `https://dog.ceo/api/breed/{breed}/{subbreed}/images/random`
+
+`RazaRepository` presenta las opciones como `raza subraza` cuando hay subrazas y elige la ruta correspondiente al obtener la imagen. `Constants` centraliza las rutas con sus parámetros `{raza}` y `{subraza}` usados por `@Path`.
 
 La historia también menciona una imagen aleatoria global, que puede no corresponder a la raza elegida. Una sola persona consulta esta contradicción con el profesor. Mientras llega respuesta, usar el endpoint por raza para cumplir el criterio funcional de mostrar la raza seleccionada y dejar registrada esta interpretación.
 
 Retrofit obtiene la respuesta JSON y el convertidor Gson la transforma al modelo de respuesta. Glide carga la imagen desde la URL; esta presentación no sustituye al consumo de API mediante Repository. Las dependencias están declaradas en [el catálogo de versiones](gradle/libs.versions.toml) y [el módulo app](app/build.gradle.kts), siguiendo las versiones de Retrofit/Gson y Glide observadas en clase 9.
 
-**Pendiente de acordar antes de implementar el guardado:** definir qué ocurre si no se puede obtener una URL, si se permite persistir la cita sin ella y cómo se representaría ese caso en `imagenUrl`. La imagen de reemplazo y los mensajes ante fallos de descarga son mejoras pendientes de acuerdo, no criterios adicionales obligatorios de HU-2. Actualmente Home intenta cargar la URL con Glide, sin esos elementos visuales. No introducir valores ficticios ni confundir un fallo de imagen con un fallo de escritura en Room. Guardar una URL no garantiza que la imagen esté disponible sin Internet.
+**Política acordada para crear citas:** si falla la consulta de imagen o devuelve una URL vacía tras quitar espacios exteriores, no insertar. El ViewModel publica el error, conserva el formulario y libera el bloqueo para reintentar. Si la inserción en Room falla, informa del fallo de guardado y tampoco navega. Solo anuncia éxito después de finalizar la escritura.
+
+Esta comprobación exige una URL no vacía; no verifica que la descarga posterior vaya a funcionar. Home usa Glide para descargar la imagen persistida. Una imagen de reemplazo o mensajes ante fallos de esa descarga siguen siendo mejoras pendientes de acuerdo, no criterios adicionales obligatorios de HU-2. Guardar una URL no garantiza que la imagen esté disponible sin Internet.
+
+### Pendientes de mantenimiento
+
+Los textos del formulario, el catálogo de síntomas y los mensajes de interfaz del Fragment y del ViewModel están centralizados en recursos. Los textos de diagnóstico permanecen en Logcat.
+- Mantener sincronizado el documento de contratos compartido con esta política de imagen y las firmas implementadas. HU-4/HU-5 conservan sus propios criterios y responsabilidades.
 
 ## Revisión de cada aporte
 
@@ -185,7 +203,7 @@ El PDF oficial de historias y rúbrica es la fuente de requisitos; Jira organiza
 2. Sincronizar Gradle con los archivos actuales del proyecto.
 3. Ejecutar la aplicación en un emulador o dispositivo compatible con `minSdk 24`.
 
-Para probar Login se necesita autenticación biométrica disponible y configurada. Para descargar imágenes desde sus URL se requiere conexión a Internet. La consulta local está implementada; el consumo de API y el CRUD completo siguen pendientes de integración.
+Para probar Login se necesita autenticación biométrica disponible y configurada. La lectura de citas usa Room local; crear una cita requiere cargar el catálogo y obtener su URL de imagen mediante Internet. Ver la imagen con Glide también necesita acceso a su URL, salvo que ya esté disponible en caché. El consumo de API y la creación están implementados en la rama de HU-3; detalle, edición y eliminación siguen pendientes.
 
 ## Seguimiento
 
