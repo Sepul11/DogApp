@@ -45,4 +45,22 @@
     <string name="error_obtener_imagen">No se pudo obtener la imagen. Intenta guardar nuevamente</string>
     <string name="error_guardar_cita">No se pudo guardar la cita</string>
 
+    <!-- HU 4: Detalle de Cita -->
+    <!-- HU 4: Detalle de Cita -->
+    <string name="titulo_detalle_cita">Detalle de la Cita</string>
+    <string name="label_turno">Turno #%1$d</string>
+    <string name="label_nombre_mascota">Nombre de la Mascota</string>
+    <string name="label_raza">Raza</string>
+    <string name="label_nombre_propietario">Nombre del Propietario</string>
+    <string name="label_telefono">Teléfono</string>
+    <string name="label_sintomas">Síntomas</string>
+    <string name="btn_editar_cita">Editar Cita</string>
+    <string name="btn_eliminar_cita">Eliminar Cita</string>
+    <string name="dialog_eliminar_titulo">Eliminar Cita</string>
+    <string name="dialog_eliminar_mensaje">¿Estás seguro de que deseas eliminar esta cita?</string>
+    <string name="dialog_eliminar_confirmar">Eliminar</string>
+    <string name="dialog_eliminar_cancelar">Cancelar</string>
+    <string name="cita_eliminada">Cita eliminada correctamente</string>
+
+
 </resources>
