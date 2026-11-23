@@ -11,6 +11,7 @@ import com.example.dogapp.R
 import com.example.dogapp.ui.adapter.CitaAdapter
 import androidx.fragment.app.viewModels
 import com.example.dogapp.viewmodel.CitaViewModel
+import androidx.core.view.isVisible
 
 class HomeFragment : Fragment() {
 
@@ -55,6 +56,19 @@ class HomeFragment : Fragment() {
 
         citaViewModel.citas.observe(viewLifecycleOwner) { citas ->
             citaAdapter.actualizarCitas(citas)
+            actualizarEstadoCitas()
+        }
+
+        citaViewModel.cargandoCitas.observe(viewLifecycleOwner) {
+            actualizarEstadoCitas()
+        }
+
+        citaViewModel.errorCitas.observe(viewLifecycleOwner) {
+            actualizarEstadoCitas()
+        }
+
+        binding.btnReintentarCitas.setOnClickListener {
+            citaViewModel.cargarCitas()
         }
 
         binding.fabNuevaCita.setOnClickListener {
@@ -62,6 +76,28 @@ class HomeFragment : Fragment() {
                 R.id.action_homeFragment_to_nuevaCitaFragment
             )
         }
+    }
+
+    private fun actualizarEstadoCitas() {
+        val cargando = citaViewModel.cargandoCitas.value == true
+        val error = citaViewModel.errorCitas.value
+        val citas = citaViewModel.citas.value
+
+        val mostrarError = !cargando && error != null
+
+        val mostrarResultado =
+            !cargando && error == null && citas != null
+
+        binding.progressCitas.isVisible = cargando
+
+        binding.contenedorErrorCitas.isVisible = mostrarError
+        binding.tvErrorCitas.text = error
+
+        binding.tvCitasVacias.isVisible =
+            mostrarResultado && citas.isNullOrEmpty()
+
+        binding.rvCitas.isVisible =
+            mostrarResultado && !citas.isNullOrEmpty()
     }
 
     override fun onStart() {

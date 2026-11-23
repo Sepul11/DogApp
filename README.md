@@ -13,13 +13,14 @@ Agenda local de citas para mascotas, desarrollada como miniproyecto del curso De
 - Nueva Cita utiliza Data Binding, consulta razas y subrazas mediante Retrofit y permite autocompletar desde dos letras. El ViewModel valida la raza contra el catálogo y obtiene la URL de imagen antes de insertar mediante el Repository compartido. Solo tras confirmar la escritura regresa a Home.
 - El ViewModel impide guardados simultáneos mediante `guardando: LiveData<Boolean>`. El botón observa ese estado y presenta texto e icono grises cuando está deshabilitado y blancos cuando está habilitado.
 - Room, Glide, Retrofit y el convertidor Gson están configurados y utilizados. `webservice` contiene `DogApiService` y `RetrofitClient`; las URL y rutas se centralizan en `utils/Constants.kt`.
-- Esta descripción corresponde a la implementación de la rama de HU-3 y sus ajustes locales; no implica que el PR ya esté integrado en `main`. El detalle completo, la eliminación y la edición siguen pendientes. No duplicar la base compartida para implementarlos.
+- HU-3 y sus ajustes fueron integrados en `main`. La rama `feature/juan/DOG-2-estados-home` añade estados de carga, error con reintento y lista vacía como mejora adicional del equipo; estos estados aún deben integrarse mediante su propio PR. El detalle completo, la eliminación y la edición siguen pendientes. No duplicar la base compartida para implementarlos.
 - Los `.gitkeep` conservan paquetes vacíos en Git; pueden eliminarse cuando esos paquetes tengan archivos reales.
 
 ### Validación realizada y pendiente
 
 - El responsable de HU-2 reportó compilación correcta y visualización de una cita insertada manualmente en la base local mediante Database Inspector, además de navegación hacia Detalle.
 - Posteriormente, el responsable reportó compilación y funcionamiento del consumo de API y del flujo de creación, además de la verificación manual final de los ajustes de HU-3. Son comprobaciones manuales reportadas por el responsable, no pruebas automatizadas.
+- Para los estados adicionales de Home, el responsable confirmó compilación y visualización del mensaje de lista vacía. La revisión estática comprobó la conexión de carga, error y reintento; su comportamiento visual sigue pendiente de prueba. No presentar esa revisión como una prueba de ejecución.
 - Al documentar la verificación en el PR, distinguir creación normal, raza inválida, catálogo no disponible, fallo al obtener imagen, pulsaciones rápidas, rotación y persistencia. Un mensaje de catálogo no disponible no prueba el manejo del fallo de imagen: para este último se necesita haber cargado primero el catálogo.
 - Sigue pendiente la recepción y el uso del ID correcto en la implementación de Detalle. Abrir esa pantalla vacía no demuestra que haya recuperado la cita correcta. No marcar pruebas como aprobadas por el solo hecho de compilar.
 
@@ -108,15 +109,24 @@ Flujo de operaciones: **Fragment → ViewModel → Repository → Room/API**. La
 
 - El Fragment lee campos, registra eventos, muestra datos/mensajes y navega. No consulta directamente el DAO, la base de datos o Retrofit.
 - El Adapter y el ViewHolder presentan las citas y notifican la selección al Fragment; no realizan operaciones de datos.
-- `CitaViewModel` coordina las operaciones y validaciones y usa `viewModelScope`. Publica `citas`, `razas`, `guardando`, `citaGuardada` y `errorNuevaCita` mediante LiveData con MutableLiveData privados. No conserva referencias a Fragments, vistas o bindings.
+- `CitaViewModel` coordina las operaciones y validaciones y usa `viewModelScope`. Publica `citas`, `cargandoCitas`, `errorCitas`, `razas`, `guardando`, `citaGuardada` y `errorNuevaCita` mediante LiveData con MutableLiveData privados. Los estados de consulta de Home son independientes de los de creación. No conserva referencias a Fragments, vistas o bindings.
 - `CitaRepository` concentra las operaciones locales. `RazaRepository` concentra las consultas de razas e imágenes. Room y la red se usan de forma asíncrona, sin bloquear el hilo principal.
 - Cada Fragment de citas obtiene su instancia de `CitaViewModel` con `by viewModels()`. No asumir que son la misma instancia: los datos actuales se recuperan desde Room a través del ViewModel y el Repository.
 - Observar LiveData con `viewLifecycleOwner` y liberar la referencia al binding en `onDestroyView`.
 - Solo mostrar éxito y navegar cuando Room confirme la escritura; ante un error de escritura, conservar el formulario y comunicar el fallo según el acuerdo de esa HU.
-- En HU-2 se aplazaron los indicadores de carga y los mensajes visuales de error/lista vacía: no son criterios explícitos de esa HU. Actualmente los errores de consulta se registran en Logcat, sin interfaz adicional. El indicador de progreso sí aparece en el ejemplo del profesor, pero no se exige por ello en Home.
+- Los estados de carga, error con reintento y lista vacía de Home se implementan como mejora adicional del equipo; no son criterios explícitos de HU-2. El indicador de progreso sigue el patrón observado en el ejemplo del profesor; distinguir vacío y error y ofrecer reintento son decisiones de DogApp.
 - En HU-3, `guardando` protege la operación en el ViewModel antes de lanzar la corrutina y se libera en `finally`, también ante error o cancelación. El Fragment observa ese estado para habilitar el botón; un fallo de carga del catálogo no libera una inserción en curso. Esta protección cubre solicitudes simultáneas en la misma instancia del ViewModel, no identifica citas iguales creadas en momentos diferentes.
 
 Antes de conectar las pantallas, acordar en la tarea compartida los nombres, parámetros y resultados de las operaciones del ViewModel y de los Repository. No crear contratos diferentes para cada Fragment.
+
+### Estados adicionales de Home
+
+- [CitaViewModel](app/src/main/java/com/example/dogapp/viewmodel/CitaViewModel.kt) activa `cargandoCitas` antes de consultar, limpia `errorCitas` y evita consultas simultáneas. Publica la lista si la consulta termina correctamente o un mensaje si falla; libera la carga en `finally` y respeta la cancelación de corrutinas.
+- [HomeFragment](app/src/main/java/com/example/dogapp/ui/home/HomeFragment.kt) observa con `viewLifecycleOwner` y actualiza la presentación con prioridad carga → error → resultado. [fragment_home.xml](app/src/main/res/layout/fragment_home.xml) contiene el indicador, el mensaje vacío y el contenedor de error con Reintentar, además del RecyclerView y el botón de Nueva Cita.
+- Una lista `null` significa que aún no se recibió un resultado; una lista vacía es una consulta correcta sin registros. El mensaje vacío solo aparece sin carga ni error y después de recibir una lista. Los fallos no se convierten en una lista vacía.
+- Durante carga o error se oculta la lista anterior, sin borrar sus datos del ViewModel. Si hay resultados se muestra el RecyclerView. El encabezado y el botón para crear citas permanecen disponibles.
+- Reintentar llama a `cargarCitas()` mediante el ViewModel; Home conserva la recarga en `onStart()`. No se añaden demoras artificiales ni cambios al DAO, Repository o esquema de Room.
+- La consulta es local: desconectar Internet no simula un error de lectura de Room. El indicador puede durar muy poco si la consulta termina rápido. Las pruebas de carga, error y recuperación deben registrarse por separado de la prueba de lista vacía.
 
 ### Integración de HU-2 con HU-3
 
@@ -203,7 +213,7 @@ El PDF oficial de historias y rúbrica es la fuente de requisitos; Jira organiza
 2. Sincronizar Gradle con los archivos actuales del proyecto.
 3. Ejecutar la aplicación en un emulador o dispositivo compatible con `minSdk 24`.
 
-Para probar Login se necesita autenticación biométrica disponible y configurada. La lectura de citas usa Room local; crear una cita requiere cargar el catálogo y obtener su URL de imagen mediante Internet. Ver la imagen con Glide también necesita acceso a su URL, salvo que ya esté disponible en caché. El consumo de API y la creación están implementados en la rama de HU-3; detalle, edición y eliminación siguen pendientes.
+Para probar Login se necesita autenticación biométrica disponible y configurada. La lectura de citas usa Room local; crear una cita requiere cargar el catálogo y obtener su URL de imagen mediante Internet. Ver la imagen con Glide también necesita acceso a su URL, salvo que ya esté disponible en caché. El consumo de API y la creación ya están integrados; detalle, edición y eliminación siguen pendientes.
 
 ## Seguimiento
 
