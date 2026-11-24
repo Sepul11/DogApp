@@ -47,6 +47,40 @@ class CitaViewModel(
 
     val guardando: LiveData<Boolean> = _guardando
 
+    // HU 4: Cita seleccionada para Detalle
+    private val _citaSeleccionada = MutableLiveData<Cita?>()
+    val citaSeleccionada: LiveData<Cita?> = _citaSeleccionada
+
+    // HU 4: Estado de eliminación
+    private val _citaEliminada = MutableLiveData<Boolean>()
+    val citaEliminada: LiveData<Boolean> = _citaEliminada
+
+    fun cargarCitaPorId(citaId: Int) {
+        viewModelScope.launch {
+            try {
+                _citaSeleccionada.value = citaRepository.obtenerCitaPorId(citaId)
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                Log.e("CitaViewModel", "Error al cargar el detalle de la cita", e)
+            }
+        }
+    }
+
+    fun eliminarCita(cita: Cita) {
+        viewModelScope.launch {
+            try {
+                citaRepository.eliminarCita(cita)
+                _citaEliminada.value = true
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                Log.e("CitaViewModel", "Error al eliminar la cita", e)
+                _citaEliminada.value = false
+            }
+        }
+    }
+
     fun cargarCitas() {
         if (_cargandoCitas.value == true) return
 
@@ -159,6 +193,14 @@ class CitaViewModel(
                 _guardando.value = false
             }
         }
+    }
+
+    fun consumirCitaEliminada() {
+        _citaEliminada.value = false
+    }
+
+    fun consumirCitaSeleccionada() {
+        _citaSeleccionada.value = null
     }
 
     fun consumirCitaGuardada() {

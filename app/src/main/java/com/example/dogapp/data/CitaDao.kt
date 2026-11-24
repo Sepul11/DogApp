@@ -3,6 +3,8 @@ package com.example.dogapp.data
 
 import androidx.room.Dao
 import androidx.room.Insert
+import androidx.room.Delete
+import androidx.room.Update
 import androidx.room.Query
 import com.example.dogapp.model.Cita
 
@@ -17,4 +19,10 @@ interface CitaDao {
 
     @Insert
     suspend fun insertarCita(cita: Cita)
+
+    @Update
+    suspend fun actualizarCita(cita: Cita)
+
+    @Delete
+    suspend fun eliminarCita(cita: Cita)
 }

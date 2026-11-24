@@ -30,4 +30,16 @@ class CitaRepository(context: Context) {
             citaDao.insertarCita(cita)
         }
     }
+
+    suspend fun actualizarCita(cita: Cita) {
+        withContext(Dispatchers.IO) {
+            citaDao.actualizarCita(cita)
+        }
+    }
+
+    suspend fun eliminarCita(cita: Cita) {
+        withContext(Dispatchers.IO) {
+            citaDao.eliminarCita(cita)
+        }
+    }
 }
