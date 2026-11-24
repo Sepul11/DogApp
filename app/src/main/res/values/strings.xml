@@ -16,6 +16,10 @@
     <!-- HU 2: Home -->
     <string name="home_title">Administrador\nde Citas</string>
     <string name="home_add_appointment">Crear nueva cita</string>
+    <string name="error_cargar_citas">No se pudieron cargar las citas. Intenta nuevamente.</string>
+    <string name="home_cargando_citas">Cargando citas</string>
+    <string name="home_sin_citas">Aún no hay citas.\nUsa el botón + para crear la primera.</string>
+    <string name="home_reintentar">Reintentar</string>
 
     <!-- HU 3: Nueva Cita -->
     <string name="titulo_nueva_cita">Nueva Cita</string>

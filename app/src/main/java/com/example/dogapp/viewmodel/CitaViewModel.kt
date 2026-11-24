@@ -23,7 +23,14 @@ class CitaViewModel(
 
     // HU 2: listado de citas
     private val _citas = MutableLiveData<List<Cita>>()
+
     val citas: LiveData<List<Cita>> = _citas
+
+    private val _cargandoCitas = MutableLiveData(false)
+    val cargandoCitas: LiveData<Boolean> = _cargandoCitas
+
+    private val _errorCitas = MutableLiveData<String?>(null)
+    val errorCitas: LiveData<String?> = _errorCitas
 
     // HU 3: listado de razas
     private val _razas = MutableLiveData<List<String>>()
@@ -75,6 +82,11 @@ class CitaViewModel(
     }
 
     fun cargarCitas() {
+        if (_cargandoCitas.value == true) return
+
+        _cargandoCitas.value = true
+        _errorCitas.value = null
+
         viewModelScope.launch {
             try {
                 _citas.value = citaRepository.obtenerCitas()
@@ -82,6 +94,11 @@ class CitaViewModel(
                 throw e
             } catch (e: Exception) {
                 Log.e("CitaViewModel", "Error al consultar las citas", e)
+
+                _errorCitas.value = getApplication<Application>()
+                    .getString(R.string.error_cargar_citas)
+            } finally {
+                _cargandoCitas.value = false
             }
         }
     }

@@ -13,14 +13,16 @@ Agenda local de citas para mascotas, desarrollada como miniproyecto del curso De
 - Nueva Cita utiliza Data Binding, consulta razas y subrazas mediante Retrofit y permite autocompletar desde dos letras. El ViewModel valida la raza contra el catálogo y obtiene la URL de imagen antes de insertar mediante el Repository compartido. Solo tras confirmar la escritura regresa a Home.
 - El ViewModel impide guardados simultáneos mediante `guardando: LiveData<Boolean>`. El botón observa ese estado y presenta texto e icono grises cuando está deshabilitado y blancos cuando está habilitado.
 - Room, Glide, Retrofit y el convertidor Gson están configurados y utilizados. `webservice` contiene `DogApiService` y `RetrofitClient`; las URL y rutas se centralizan en `utils/Constants.kt`.
-- HU-4 implementa el detalle y la eliminación con confirmación. Solo después de terminar la operación local publica éxito y regresa al Home existente, que vuelve a consultar Room. Editar navega al placeholder de HU-5 enviando `citaId`; el formulario y el guardado de edición siguen pendientes.
-- Esta descripción corresponde a la rama de HU-4; no implica que su PR ya esté integrado en `main`. Esta base aún no incorpora los estados de Home añadidos en el PR #5: al integrar, conservar esos cambios junto con los de HU-4. No duplicar la base compartida.
+- HU-3 y sus ajustes están integrados en `main`. Home incorpora estados de carga, error con reintento y lista vacía mediante el PR #5, como mejora adicional del equipo.
+- HU-4 implementa el detalle y la eliminación con confirmación. Tras completar la operación local regresa a Home, que vuelve a consultar Room. Editar navega al placeholder de HU-5 enviando `citaId`; la edición completa sigue pendiente.
+- Se reutilizan la entidad, el ViewModel, el Repository y el DAO compartidos, sin duplicar estas piezas.
 - Los `.gitkeep` conservan paquetes vacíos en Git; pueden eliminarse cuando esos paquetes tengan archivos reales.
 
 ### Validación realizada y pendiente
 
 - El responsable de HU-2 reportó compilación correcta y visualización de una cita insertada manualmente en la base local mediante Database Inspector, además de navegación hacia Detalle.
 - Posteriormente, el responsable reportó compilación y funcionamiento del consumo de API y del flujo de creación, además de la verificación manual final de los ajustes de HU-3. Son comprobaciones manuales reportadas por el responsable, no pruebas automatizadas.
+- Para los estados adicionales de Home, el responsable confirmó compilación y visualización del mensaje de lista vacía. La revisión estática comprobó la conexión de carga, error y reintento; su comportamiento visual sigue pendiente de prueba. No presentar esa revisión como una prueba de ejecución.
 - Al documentar la verificación en el PR, distinguir creación normal, raza inválida, catálogo no disponible, fallo al obtener imagen, pulsaciones rápidas, rotación y persistencia. Un mensaje de catálogo no disponible no prueba el manejo del fallo de imagen: para este último se necesita haber cargado primero el catálogo.
 - En el worktree aislado de auditoría de HU-4 se ejecutó `gradlew.bat assembleDebug` con resultado `BUILD SUCCESSFUL`, antes de los ajustes locales de colores. La compilación de esos ajustes en esta carpeta no se ha comprobado en esta revisión. Se revisó por código el recorrido del ID, la consulta por clave primaria, la presentación de campos, la eliminación por capas y la recarga de Home. No se ejecutaron pruebas unitarias ni instrumentadas.
 - Sigue pendiente documentar la prueba manual con dos citas distintas: abrir cada detalle, comprobar sus campos e imagen, cancelar y confirmar el borrado, verificar que solo desaparece la cita seleccionada y comprobar la navegación al placeholder de edición. Compilar no demuestra estos resultados en ejecución.
@@ -115,10 +117,19 @@ Flujo de operaciones: **Fragment → ViewModel → Repository → Room/API**. La
 - Cada Fragment de citas obtiene su instancia de `CitaViewModel` con `by viewModels()`. No asumir que son la misma instancia: los datos actuales se recuperan desde Room a través del ViewModel y el Repository.
 - Observar LiveData con `viewLifecycleOwner` y liberar la referencia al binding en `onDestroyView`.
 - Solo mostrar éxito y navegar cuando Room confirme la escritura; ante un error de escritura, conservar el formulario y comunicar el fallo según el acuerdo de esa HU.
-- En HU-2 se aplazaron los indicadores de carga y los mensajes visuales de error/lista vacía: no son criterios explícitos de esa HU. Actualmente los errores de consulta se registran en Logcat, sin interfaz adicional. El indicador de progreso sí aparece en el ejemplo del profesor, pero no se exige por ello en Home.
+- Los estados de carga, error con reintento y lista vacía de Home se implementan como mejora adicional del equipo; no son criterios explícitos de HU-2. El indicador de progreso sigue el patrón observado en el ejemplo del profesor; distinguir vacío y error y ofrecer reintento son decisiones de DogApp.
 - En HU-3, `guardando` protege la operación en el ViewModel antes de lanzar la corrutina y se libera en `finally`, también ante error o cancelación. El Fragment observa ese estado para habilitar el botón; un fallo de carga del catálogo no libera una inserción en curso. Esta protección cubre solicitudes simultáneas en la misma instancia del ViewModel, no identifica citas iguales creadas en momentos diferentes.
 
 Antes de conectar las pantallas, acordar en la tarea compartida los nombres, parámetros y resultados de las operaciones del ViewModel y de los Repository. No crear contratos diferentes para cada Fragment.
+
+### Estados adicionales de Home
+
+- [CitaViewModel](app/src/main/java/com/example/dogapp/viewmodel/CitaViewModel.kt) activa `cargandoCitas` antes de consultar, limpia `errorCitas` y evita consultas simultáneas. Publica la lista si la consulta termina correctamente o un mensaje si falla; libera la carga en `finally` y respeta la cancelación de corrutinas.
+- [HomeFragment](app/src/main/java/com/example/dogapp/ui/home/HomeFragment.kt) observa con `viewLifecycleOwner` y actualiza la presentación con prioridad carga → error → resultado. [fragment_home.xml](app/src/main/res/layout/fragment_home.xml) contiene el indicador, el mensaje vacío y el contenedor de error con Reintentar, además del RecyclerView y el botón de Nueva Cita.
+- Una lista `null` significa que aún no se recibió un resultado; una lista vacía es una consulta correcta sin registros. El mensaje vacío solo aparece sin carga ni error y después de recibir una lista. Los fallos no se convierten en una lista vacía.
+- Durante carga o error se oculta la lista anterior, sin borrar sus datos del ViewModel. Si hay resultados se muestra el RecyclerView. El encabezado y el botón para crear citas permanecen disponibles.
+- Reintentar llama a `cargarCitas()` mediante el ViewModel; Home conserva la recarga en `onStart()`. No se añaden demoras artificiales ni cambios al DAO, Repository o esquema de Room.
+- La consulta es local: desconectar Internet no simula un error de lectura de Room. El indicador puede durar muy poco si la consulta termina rápido. Las pruebas de carga, error y recuperación deben registrarse por separado de la prueba de lista vacía.
 
 ### Integración de HU-2 con HU-3
 
