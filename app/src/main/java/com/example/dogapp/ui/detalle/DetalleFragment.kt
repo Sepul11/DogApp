@@ -112,12 +112,16 @@ class DetalleFragment : Fragment() {
     }
 
     private fun mostrarDetalleCita(cita: Cita) {
-        binding.tvTurnoDetalle.text = getString(R.string.label_turno, cita.id)
-        binding.tvNombreMascotaDetalle.text = cita.nombreMascota
+
+        // Colocar el nombre de la mascota en el Toolbar (ej. "Cory")
+        binding.tvTituloDetalle.text = cita.nombreMascota
+
+        binding.tvTurnoDetalle.text = getString(R.string.label_turno_simple, cita.id)
         binding.tvRazaDetalle.text = cita.raza
-        binding.tvNombrePropietarioDetalle.text = cita.nombrePropietario
-        binding.tvTelefonoDetalle.text = cita.telefono
         binding.tvSintomaDetalle.text = cita.sintoma
+        binding.tvNombrePropietarioDetalle.text = getString(R.string.label_propietario_fmt, cita.nombrePropietario)
+        binding.tvTelefonoDetalle.text = getString(R.string.label_telefono_fmt, cita.telefono)
+
 
         Glide.with(this)
             .load(cita.imagenUrl)
