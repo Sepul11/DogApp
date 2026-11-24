@@ -6,7 +6,7 @@
     <androidx.constraintlayout.widget.ConstraintLayout
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:background="#F9F6FA">
+        android:background="@color/white">
 
         <!-- Toolbar Superior con el Nombre de la Mascota -->
         <FrameLayout
@@ -100,7 +100,7 @@
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:layout_marginTop="8dp"
-                            android:textColor="#333333"
+                            android:textColor="@color/black"
                             android:textSize="22sp"
                             android:textStyle="bold"
                             app:layout_constraintTop_toTopOf="parent"
@@ -224,7 +224,7 @@
                 android:contentDescription="@string/btn_editar_cita"
                 app:srcCompat="@android:drawable/ic_menu_edit"
                 app:tint="@color/white"
-                app:backgroundTint="@color/login_background"
+                app:backgroundTint="@color/appointment_dark_blue"
                 app:fabSize="normal"
                 app:layout_constraintEnd_toEndOf="parent"
                 app:layout_constraintTop_toTopOf="parent"
