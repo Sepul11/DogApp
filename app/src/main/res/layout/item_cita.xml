@@ -3,6 +3,7 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools">
 
+    <!-- HU-2: tarjeta reutilizada por el ViewHolder; tools no representa datos reales. -->
     <com.google.android.material.card.MaterialCardView
         android:id="@+id/cardCita"
         android:layout_width="match_parent"
@@ -22,6 +23,7 @@
             android:minHeight="104dp"
             android:padding="16dp">
 
+            <!-- El estilo aplica forma circular; Glide asigna la URL persistida en tiempo de ejecución. -->
             <com.google.android.material.imageview.ShapeableImageView
                 android:id="@+id/ivMascota"
                 android:layout_width="64dp"

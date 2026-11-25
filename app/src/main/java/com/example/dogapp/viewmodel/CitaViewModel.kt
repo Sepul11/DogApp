@@ -14,6 +14,9 @@ import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.launch
 import com.example.dogapp.R
 
+// Compartido HU-2 a HU-5: coordina Repository y publica estado, sin conservar vistas.
+// MutableLiveData privado permite escribir aquí; la UI observa LiveData y solicita acciones.
+// viewModelScope inicia corrutinas ligadas al ViewModel y las cancela al destruirse.
 class CitaViewModel(
     application: Application
 ) : AndroidViewModel(application) {
@@ -21,7 +24,7 @@ class CitaViewModel(
     private val citaRepository = CitaRepository(application)
     private val razaRepository = RazaRepository()
 
-    // HU 2: listado de citas
+    // HU-2: lista y estados de Home.
     private val _citas = MutableLiveData<List<Cita>>()
 
     val citas: LiveData<List<Cita>> = _citas
@@ -32,41 +35,44 @@ class CitaViewModel(
     private val _errorCitas = MutableLiveData<String?>(null)
     val errorCitas: LiveData<String?> = _errorCitas
 
-    // HU 3: listado de razas
+    // HU-3/HU-5: catálogo remoto para sugerencias y validación.
     private val _razas = MutableLiveData<List<String>>()
     val razas: LiveData<List<String>> = _razas
 
-    // HU 3: estado del guardado
+    // HU-3: resultado de creación y errores del formulario/catálogo.
     private val _citaGuardada = MutableLiveData<Boolean>()
     val citaGuardada: LiveData<Boolean> = _citaGuardada
 
     private val _errorNuevaCita = MutableLiveData<String?>()
     val errorNuevaCita: LiveData<String?> = _errorNuevaCita
 
+    // HU-3/HU-5: evita guardados simultáneos dentro de esta instancia.
     private val _guardando = MutableLiveData(false)
 
     val guardando: LiveData<Boolean> = _guardando
 
-    // HU 4: Cita seleccionada para Detalle
+    // HU-4/HU-5: registro seleccionado por ID.
     private val _citaSeleccionada = MutableLiveData<Cita?>()
     val citaSeleccionada: LiveData<Cita?> = _citaSeleccionada
 
-    // HU 4: Estado de eliminación
+    // HU-4: resultado del borrado.
     private val _citaEliminada = MutableLiveData<Boolean>()
     val citaEliminada: LiveData<Boolean> = _citaEliminada
 
-    // HU 5: resultado de edición
+    // HU-5: resultado de edición.
     private val _citaActualizada = MutableLiveData(false)
     val citaActualizada: LiveData<Boolean> = _citaActualizada
 
     private val _errorEditarCita = MutableLiveData<String?>(null)
     val errorEditarCita: LiveData<String?> = _errorEditarCita
 
+    // HU-4/HU-5: espera el resultado del Repository y lo publica para detalle/edición.
     fun cargarCitaPorId(citaId: Int) {
         viewModelScope.launch {
             try {
                 _citaSeleccionada.value = citaRepository.obtenerCitaPorId(citaId)
             } catch (e: CancellationException) {
+                // La cancelación pertenece al ciclo de vida; no se convierte en un error de datos.
                 throw e
             } catch (e: Exception) {
                 Log.e("CitaViewModel", "Error al cargar el detalle de la cita", e)
@@ -74,6 +80,7 @@ class CitaViewModel(
         }
     }
 
+    // HU-4: publica éxito después de completar el DAO, no al pulsar el botón.
     fun eliminarCita(cita: Cita) {
         viewModelScope.launch {
             try {
@@ -88,6 +95,7 @@ class CitaViewModel(
         }
     }
 
+    // HU-2: lectura puntual; finally libera la carga incluso ante fallo o cancelación.
     fun cargarCitas() {
         if (_cargandoCitas.value == true) return
 
@@ -110,6 +118,7 @@ class CitaViewModel(
         }
     }
 
+    // HU-3/HU-5: carga el catálogo por Repository; la UI observa la lista resultante.
     fun cargarRazas() {
         viewModelScope.launch {
             try {
@@ -124,6 +133,7 @@ class CitaViewModel(
         }
     }
 
+    // HU-3: valida catálogo, obtiene imagen y después inserta; un fallo conserva el formulario.
     fun guardarCita(cita: Cita) {
 
         if (_guardando.value == true) return
@@ -197,11 +207,13 @@ class CitaViewModel(
                 _errorNuevaCita.value = getApplication<Application>()
                     .getString(R.string.error_guardar_cita)
             } finally {
+                // Libera el bloqueo también ante return@launch o cancelación.
                 _guardando.value = false
             }
         }
     }
 
+    // Limpia el resultado atendido para no repetir Toast y navegación.
     fun consumirCitaEliminada() {
         _citaEliminada.value = false
     }
@@ -218,6 +230,7 @@ class CitaViewModel(
         _errorNuevaCita.value = null
     }
 
+    // HU-5: recibe campos editables y conserva identidad/síntoma del registro seleccionado.
     fun actualizarCita(
         nombreMascota: String,
         raza: String,
@@ -288,6 +301,7 @@ class CitaViewModel(
                     original.imagenUrl
                 }
 
+                // copy conserva los campos no indicados: ID y síntoma no se reemplazan.
                 val modificada = original.copy(
                     nombreMascota = nombre,
                     raza = razaValidada,
@@ -299,6 +313,7 @@ class CitaViewModel(
                 val filasActualizadas =
                     citaRepository.actualizarCita(modificada)
 
+                // Cero filas no equivale a éxito: la cita pudo dejar de existir.
                 check(filasActualizadas == 1) {
                     "La cita no pudo actualizarse"
                 }
@@ -312,11 +327,13 @@ class CitaViewModel(
                 _errorEditarCita.value = getApplication<Application>()
                     .getString(R.string.error_actualizar_cita)
             } finally {
+                // Libera el bloqueo también ante return@launch o cancelación.
                 _guardando.value = false
             }
         }
     }
 
+    // La UI consume resultados atendidos para no repetir sus efectos al recrearse.
     fun consumirCitaActualizada() {
         _citaActualizada.value = false
     }

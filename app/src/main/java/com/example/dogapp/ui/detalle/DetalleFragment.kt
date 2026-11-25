@@ -16,18 +16,12 @@ import com.example.dogapp.databinding.FragmentDetalleBinding
 import com.example.dogapp.model.Cita
 import com.example.dogapp.viewmodel.CitaViewModel
 
-// TODO: Rename parameter arguments, choose names that match
-// the fragment initialization parameters, e.g. ARG_ITEM_NUMBER
 private const val ARG_PARAM1 = "param1"
 private const val ARG_PARAM2 = "param2"
 
-/**
- * A simple [Fragment] subclass.
- * Use the [DetalleFragment.newInstance] factory method to
- * create an instance of this fragment.
- */
+// HU-4: presenta una cita, solicita su borrado y abre HU-5 por ID.
 class DetalleFragment : Fragment() {
-    // TODO: Rename and change types of parameters
+    // El binding generado conecta Kotlin con el XML; solo se usa mientras existe la vista.
     private var _binding: FragmentDetalleBinding? = null
     private val binding get() = _binding!!
 
@@ -113,7 +107,7 @@ class DetalleFragment : Fragment() {
 
     private fun mostrarDetalleCita(cita: Cita) {
 
-        // Colocar el nombre de la mascota en el Toolbar (ej. "Cory")
+        // Todos los campos y la imagen pertenecen al registro consultado por ID.
         binding.tvTituloDetalle.text = cita.nombreMascota
 
         binding.tvTurnoDetalle.text = getString(R.string.label_turno_simple, cita.id)
@@ -130,6 +124,7 @@ class DetalleFragment : Fragment() {
             .into(binding.ivDetalleMascota)
     }
 
+    // Confirmación opcional en HU-4: aceptar solicita el borrado sin navegar antes de completarlo.
     private fun mostrarDialogoConfirmacion(cita: Cita) {
         AlertDialog.Builder(requireContext())
             .setTitle(R.string.dialog_eliminar_titulo)
@@ -141,6 +136,7 @@ class DetalleFragment : Fragment() {
             .show()
     }
 
+    // El Fragment puede seguir en la pila sin su vista; libera el binding para no retenerla.
     override fun onDestroyView() {
         super.onDestroyView()
         _binding = null

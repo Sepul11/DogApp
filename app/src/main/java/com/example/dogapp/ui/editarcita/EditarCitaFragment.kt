@@ -14,12 +14,17 @@ import android.widget.Toast
 import androidx.core.widget.doOnTextChanged
 import com.example.dogapp.R
 
+// HU-5: presenta el borrador; el ViewModel valida y actualiza el registro original.
 class EditarCitaFragment : Fragment() {
 
+    // El binding generado conecta Kotlin con el XML; solo se usa mientras existe la vista.
     private var _binding: FragmentEditarCitaBinding? = null
     private val binding get() = _binding!!
 
     private val citaViewModel: CitaViewModel by viewModels()
+
+    // Distingue la carga inicial del borrador restaurado por Android.
+    private var formularioPrecargado = false
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -42,6 +47,8 @@ class EditarCitaFragment : Fragment() {
 
         binding.lifecycleOwner = viewLifecycleOwner
 
+        formularioPrecargado = savedInstanceState?.getBoolean("formularioPrecargado", false) ?: false
+
         val citaId = arguments?.getInt("citaId", -1) ?: -1
 
         if (citaId <= 0) {
@@ -57,13 +64,18 @@ class EditarCitaFragment : Fragment() {
 
         configurarEdicion()
 
+        // Conserva el borrador y revalida el botón cuando termina la consulta asíncrona.
         citaViewModel.citaSeleccionada.observe(viewLifecycleOwner) { cita ->
-            if (cita != null && savedInstanceState == null) {
+            if (cita != null && !formularioPrecargado) {
                 binding.etNombreMascota.setText(cita.nombreMascota)
                 binding.actvRaza.setText(cita.raza, false)
                 binding.etNombrePropietario.setText(cita.nombrePropietario)
                 binding.etTelefono.setText(cita.telefono)
+
+                formularioPrecargado = true
             }
+
+            validarFormulario()
         }
 
         citaViewModel.razas.observe(viewLifecycleOwner) { razas ->
@@ -131,6 +143,7 @@ class EditarCitaFragment : Fragment() {
                     Toast.LENGTH_SHORT
                 ).show()
 
+                // Retira Editar y Detalle para no dejar una pantalla con datos anteriores.
                 findNavController().popBackStack(
                     R.id.homeFragment,
                     false
@@ -179,6 +192,13 @@ class EditarCitaFragment : Fragment() {
                     citaViewModel.guardando.value != true
     }
 
+    // Guarda la decisión de precarga; las vistas con ID restauran su texto por separado.
+    override fun onSaveInstanceState(outState: Bundle) {
+        super.onSaveInstanceState(outState)
+        outState.putBoolean("formularioPrecargado", formularioPrecargado)
+    }
+
+    // El Fragment puede seguir en la pila sin su vista; libera el binding para no retenerla.
     override fun onDestroyView() {
         super.onDestroyView()
         _binding = null

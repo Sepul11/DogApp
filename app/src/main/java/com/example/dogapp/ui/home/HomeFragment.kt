@@ -13,8 +13,10 @@ import androidx.fragment.app.viewModels
 import com.example.dogapp.viewmodel.CitaViewModel
 import androidx.core.view.isVisible
 
+// HU-2: presenta citas y recibe las acciones para abrir HU-3 o HU-4.
 class HomeFragment : Fragment() {
 
+    // El binding generado conecta Kotlin con el XML; solo se usa mientras existe la vista.
     private var _binding: FragmentHomeBinding? = null
     private val binding get() = _binding!!
 
@@ -54,6 +56,7 @@ class HomeFragment : Fragment() {
         binding.rvCitas.adapter = citaAdapter
         binding.lifecycleOwner = viewLifecycleOwner
 
+        // viewLifecycleOwner limita la observación al ciclo de vida de esta vista.
         citaViewModel.citas.observe(viewLifecycleOwner) { citas ->
             citaAdapter.actualizarCitas(citas)
             actualizarEstadoCitas()
@@ -78,6 +81,7 @@ class HomeFragment : Fragment() {
         }
     }
 
+    // Mejora del equipo: prioridad carga, error y resultado; un fallo no equivale a lista vacía.
     private fun actualizarEstadoCitas() {
         val cargando = citaViewModel.cargandoCitas.value == true
         val error = citaViewModel.errorCitas.value
@@ -100,11 +104,13 @@ class HomeFragment : Fragment() {
             mostrarResultado && !citas.isNullOrEmpty()
     }
 
+    // Recarga al volver de HU-3/HU-4/HU-5: cada Fragment tiene su propio ViewModel.
     override fun onStart() {
         super.onStart()
         citaViewModel.cargarCitas()
     }
 
+    // El Fragment puede seguir en la pila sin su vista; libera el binding para no retenerla.
     override fun onDestroyView() {
         super.onDestroyView()
         _binding = null

@@ -3,6 +3,7 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools">
 
+    <!-- HU-1: Data Binding conecta el ViewModel con enabled en la huella. -->
     <data>
         <variable
             name="viewModel"
@@ -45,6 +46,7 @@
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toBottomOf="@id/dogImage" />
 
+        <!-- Animación que recibe el clic; BiometricPrompt realiza la autenticación real. -->
         <com.airbnb.lottie.LottieAnimationView
             android:id="@+id/fingerprintAnimation"
             android:layout_width="0dp"

@@ -8,6 +8,7 @@ import com.example.dogapp.utils.Constants.END_POINT_RAZAS
 import com.example.dogapp.utils.Constants.END_POINT_IMAGEN_RAZA
 import com.example.dogapp.utils.Constants.END_POINT_IMAGEN_SUBRAZA
 
+// HU-3/HU-5: Retrofit implementa las peticiones; @Path completa los parámetros de la ruta.
 interface DogApiService {
 
     @GET(END_POINT_RAZAS)

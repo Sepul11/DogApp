@@ -1,4 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!-- HU-3/HU-5: texto/icono grises deshabilitados y blancos al habilitar el botón. -->
 <selector xmlns:android="http://schemas.android.com/apk/res/android">
 
     <item

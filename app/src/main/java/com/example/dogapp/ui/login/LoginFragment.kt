@@ -16,8 +16,10 @@ import com.example.dogapp.R
 import com.example.dogapp.databinding.FragmentLoginBinding
 import com.example.dogapp.viewmodel.LoginViewModel
 
+// HU-1: solicita biometría al sistema y navega según el resultado del ViewModel.
 class LoginFragment : Fragment() {
 
+    // El binding generado conecta Kotlin con el XML; solo se usa mientras existe la vista.
     private var _binding: FragmentLoginBinding? = null
     private val binding get() = _binding!!
 
@@ -27,6 +29,7 @@ class LoginFragment : Fragment() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
+        // Android realiza la autenticación; el callback entrega el resultado al ViewModel.
         biometricPrompt = BiometricPrompt(
             this,
             ContextCompat.getMainExecutor(requireContext()),
@@ -84,6 +87,7 @@ class LoginFragment : Fragment() {
     ) {
         super.onViewCreated(view, savedInstanceState)
 
+        // La expresion XML de enabled observa autenticando gracias al lifecycleOwner.
         binding.lifecycleOwner = viewLifecycleOwner
         binding.viewModel = viewModel
 
@@ -99,6 +103,7 @@ class LoginFragment : Fragment() {
                     R.id.homeFragment,
                     null,
                     navOptions {
+                        // Retira Login: Atrás desde Home no vuelve a la pantalla de huella.
                         popUpTo(R.id.loginFragment) {
                             inclusive = true
                         }
@@ -114,6 +119,7 @@ class LoginFragment : Fragment() {
         val autenticadores =
             BiometricManager.Authenticators.BIOMETRIC_STRONG
 
+        // Comprueba sensor/credencial compatible antes de abrir el diálogo.
         val disponibilidad = BiometricManager.from(requireContext())
             .canAuthenticate(autenticadores)
 
@@ -137,6 +143,7 @@ class LoginFragment : Fragment() {
         biometricPrompt.authenticate(promptInfo)
     }
 
+    // El Fragment puede seguir en la pila sin su vista; libera el binding para no retenerla.
     override fun onDestroyView() {
         super.onDestroyView()
         _binding = null

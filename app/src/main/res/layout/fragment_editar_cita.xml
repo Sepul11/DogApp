@@ -2,12 +2,14 @@
 <layout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto">
 
+    <!-- HU-5: cuatro campos editables; el síntoma se conserva en el modelo original. -->
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:orientation="vertical"
         android:background="@color/white">
 
+        <!-- Atrás vuelve al detalle; actualizar correctamente regresa a Home. -->
         <FrameLayout
             android:id="@+id/toolbarEditarCita"
             android:layout_width="match_parent"
@@ -56,6 +58,7 @@
                 android:paddingTop="24dp"
                 android:paddingBottom="24dp">
 
+                <!-- Hint flotante y foco morado; los campos limitan longitudes y tipo de entrada. -->
                 <com.google.android.material.textfield.TextInputLayout
                     android:id="@+id/tilNombreMascota"
                     style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
@@ -99,6 +102,7 @@
                     app:boxStrokeColor="@color/field_focus_purple"
                     app:hintTextColor="@color/field_focus_purple">
 
+                    <!-- Reutiliza catálogo remoto de HU-3 para sugerencias y validación de raza. -->
                     <com.google.android.material.textfield.MaterialAutoCompleteTextView
                         android:id="@+id/actvRaza"
                         android:layout_width="match_parent"
@@ -173,6 +177,7 @@
 
                 </com.google.android.material.textfield.TextInputLayout>
 
+                <!-- Kotlin exige campos completos, cita cargada y ausencia de guardado en curso. -->
                 <com.google.android.material.button.MaterialButton
                     android:id="@+id/btnEditarCita"
                     android:layout_width="wrap_content"

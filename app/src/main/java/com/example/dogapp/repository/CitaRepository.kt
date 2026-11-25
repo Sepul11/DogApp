@@ -8,6 +8,8 @@ import com.example.dogapp.model.Cita
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
+// Compartido HU-2 a HU-5: acceso local del ViewModel al DAO.
+// withContext(IO) sigue el patrón del Repository de clase 8; los errores llegan al ViewModel.
 class CitaRepository(context: Context) {
 
     private val citaDao: CitaDao =
