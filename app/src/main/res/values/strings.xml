@@ -65,5 +65,14 @@
     <string name="dialog_eliminar_cancelar">Cancelar</string>
     <string name="cita_eliminada">Cita eliminada correctamente</string>
 
+    <!-- HU 5: Editar Cita -->
+    <string name="titulo_editar_cita">Editar Cita</string>
+    <string name="volver_detalle">Volver al detalle de la cita</string>
+
+    <string name="error_cita_no_disponible">No se pudo recuperar la cita. Regresa al detalle e intenta nuevamente.</string>
+    <string name="error_campos_edicion">Revisa los campos: mascota hasta 15 caracteres, propietario hasta 30 y teléfono de hasta 10 dígitos.</string>
+    <string name="error_raza_edicion">Espera a que carguen las razas y selecciona una opción válida.</string>
+    <string name="error_actualizar_cita">No se pudo actualizar la cita. Tus cambios siguen en el formulario.</string>
+    <string name="cita_actualizada_correctamente">Cita actualizada correctamente</string>
 
 </resources>

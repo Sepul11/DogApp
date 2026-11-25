@@ -55,6 +55,13 @@ class CitaViewModel(
     private val _citaEliminada = MutableLiveData<Boolean>()
     val citaEliminada: LiveData<Boolean> = _citaEliminada
 
+    // HU 5: resultado de edición
+    private val _citaActualizada = MutableLiveData(false)
+    val citaActualizada: LiveData<Boolean> = _citaActualizada
+
+    private val _errorEditarCita = MutableLiveData<String?>(null)
+    val errorEditarCita: LiveData<String?> = _errorEditarCita
+
     fun cargarCitaPorId(citaId: Int) {
         viewModelScope.launch {
             try {
@@ -209,5 +216,112 @@ class CitaViewModel(
 
     fun consumirErrorNuevaCita() {
         _errorNuevaCita.value = null
+    }
+
+    fun actualizarCita(
+        nombreMascota: String,
+        raza: String,
+        nombrePropietario: String,
+        telefono: String
+    ) {
+        if (_guardando.value == true) return
+
+        _errorEditarCita.value = null
+        _citaActualizada.value = false
+
+        val original = _citaSeleccionada.value
+
+        if (original == null) {
+            _errorEditarCita.value = getApplication<Application>()
+                .getString(R.string.error_cita_no_disponible)
+            return
+        }
+
+        val nombre = nombreMascota.trim()
+        val propietario = nombrePropietario.trim()
+        val contacto = telefono.trim()
+
+        if (
+            nombre.isBlank() || nombre.length > 15 ||
+            propietario.isBlank() || propietario.length > 30 ||
+            contacto.isEmpty() || contacto.length > 10 ||
+            contacto.any { it !in '0'..'9' }
+        ) {
+            _errorEditarCita.value = getApplication<Application>()
+                .getString(R.string.error_campos_edicion)
+            return
+        }
+
+        val razaValidada = _razas.value?.firstOrNull {
+            it.equals(raza.trim(), ignoreCase = true)
+        }
+
+        if (razaValidada == null) {
+            _errorEditarCita.value = getApplication<Application>()
+                .getString(R.string.error_raza_edicion)
+            return
+        }
+
+        _guardando.value = true
+
+        viewModelScope.launch {
+            try {
+                val cambioRaza = !original.raza.equals(
+                    razaValidada,
+                    ignoreCase = true
+                )
+
+                val imagen = if (cambioRaza) {
+                    try {
+                        razaRepository.obtenerImagenRaza(razaValidada)
+                            .trim()
+                            .also { check(it.isNotEmpty()) }
+                    } catch (e: CancellationException) {
+                        throw e
+                    } catch (e: Exception) {
+                        Log.w("CitaViewModel", "Error al obtener imagen", e)
+                        _errorEditarCita.value = getApplication<Application>()
+                            .getString(R.string.error_obtener_imagen)
+                        return@launch
+                    }
+                } else {
+                    original.imagenUrl
+                }
+
+                val modificada = original.copy(
+                    nombreMascota = nombre,
+                    raza = razaValidada,
+                    nombrePropietario = propietario,
+                    telefono = contacto,
+                    imagenUrl = imagen
+                )
+
+                val filasActualizadas =
+                    citaRepository.actualizarCita(modificada)
+
+                check(filasActualizadas == 1) {
+                    "La cita no pudo actualizarse"
+                }
+
+                _citaSeleccionada.value = modificada
+                _citaActualizada.value = true
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                Log.e("CitaViewModel", "Error al actualizar la cita", e)
+                _errorEditarCita.value = getApplication<Application>()
+                    .getString(R.string.error_actualizar_cita)
+            } finally {
+                _guardando.value = false
+            }
+        }
+    }
+
+    fun consumirCitaActualizada() {
+        _citaActualizada.value = false
+    }
+
+    fun consumirErrorEditarCita() {
+        _errorEditarCita.value = null
     }
 }

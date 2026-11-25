@@ -31,8 +31,8 @@ class CitaRepository(context: Context) {
         }
     }
 
-    suspend fun actualizarCita(cita: Cita) {
-        withContext(Dispatchers.IO) {
+    suspend fun actualizarCita(cita: Cita): Int {
+        return withContext(Dispatchers.IO) {
             citaDao.actualizarCita(cita)
         }
     }

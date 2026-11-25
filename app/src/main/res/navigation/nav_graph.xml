@@ -53,7 +53,11 @@
         android:id="@+id/editarCitaFragment"
         android:name="com.example.dogapp.ui.editarcita.EditarCitaFragment"
         android:label="Editar Cita"
-        tools:layout="@layout/fragment_editar_cita" />
+        tools:layout="@layout/fragment_editar_cita">
 
+        <argument
+            android:name="citaId"
+            app:argType="integer" />
 
+    </fragment>
 </navigation>
