@@ -2,6 +2,7 @@
 <layout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto">
 
+    <!-- HU-3: formulario conectado a NuevaCitaFragment mediante el binding generado. -->
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="match_parent"
@@ -41,6 +42,7 @@
         </FrameLayout>
 
 
+    <!-- Permite desplazar el formulario con teclado o pantallas pequeñas. -->
     <ScrollView
         android:layout_width="match_parent"
         android:layout_height="0dp"
@@ -56,6 +58,7 @@
             android:paddingTop="24dp"
             android:paddingBottom="24dp">
 
+            <!-- Hint flotante y borde en TextInputLayout; EditText limita el tipo y longitud. -->
             <com.google.android.material.textfield.TextInputLayout
                 android:id="@+id/tilNombreMascota"
                 style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
@@ -99,6 +102,7 @@
                 app:boxStrokeColor="@color/field_focus_purple"
                 app:hintTextColor="@color/field_focus_purple">
 
+                <!-- La raza usa catálogo remoto y sugerencias desde dos letras. -->
                 <com.google.android.material.textfield.MaterialAutoCompleteTextView
                     android:id="@+id/actvRaza"
                     android:layout_width="match_parent"
@@ -200,6 +204,7 @@
 
             </com.google.android.material.textfield.TextInputLayout>
 
+            <!-- Kotlin habilita el botón; el selector adapta texto e icono a enabled. -->
             <com.google.android.material.button.MaterialButton
                 android:id="@+id/btnGuardarCita"
                 android:layout_width="wrap_content"

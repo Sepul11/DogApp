@@ -14,7 +14,8 @@ Agenda local de citas para mascotas, desarrollada como miniproyecto del curso De
 - El ViewModel impide guardados simultáneos mediante `guardando: LiveData<Boolean>`. El botón observa ese estado y presenta texto e icono grises cuando está deshabilitado y blancos cuando está habilitado.
 - Room, Glide, Retrofit y el convertidor Gson están configurados y utilizados. `webservice` contiene `DogApiService` y `RetrofitClient`; las URL y rutas se centralizan en `utils/Constants.kt`.
 - HU-3 y sus ajustes están integrados en `main`. Home incorpora estados de carga, error con reintento y lista vacía mediante el PR #5, como mejora adicional del equipo.
-- HU-4 implementa el detalle y la eliminación con confirmación. Tras completar la operación local regresa a Home, que vuelve a consultar Room. Editar navega al placeholder de HU-5 enviando `citaId`; la edición completa sigue pendiente.
+- HU-4 implementa el detalle y la eliminación con confirmación. Tras completar la operación local regresa a Home, que vuelve a consultar Room. Editar navega a HU-5 enviando `citaId`.
+- HU-5 implementa la precarga y edición de nombre, raza, propietario y teléfono. Conserva ID y síntoma, obtiene otra imagen solo si cambia la raza y regresa a Home tras comprobar que Room actualizó una fila. Esta descripción corresponde a la rama de HU-5; no implica que su PR ya esté integrado en `main`.
 - Se reutilizan la entidad, el ViewModel, el Repository y el DAO compartidos, sin duplicar estas piezas.
 - Los `.gitkeep` conservan paquetes vacíos en Git; pueden eliminarse cuando esos paquetes tengan archivos reales.
 
@@ -25,7 +26,9 @@ Agenda local de citas para mascotas, desarrollada como miniproyecto del curso De
 - Para los estados adicionales de Home, el responsable confirmó compilación y visualización del mensaje de lista vacía. La revisión estática comprobó la conexión de carga, error y reintento; su comportamiento visual sigue pendiente de prueba. No presentar esa revisión como una prueba de ejecución.
 - Al documentar la verificación en el PR, distinguir creación normal, raza inválida, catálogo no disponible, fallo al obtener imagen, pulsaciones rápidas, rotación y persistencia. Un mensaje de catálogo no disponible no prueba el manejo del fallo de imagen: para este último se necesita haber cargado primero el catálogo.
 - En el worktree aislado de auditoría de HU-4 se ejecutó `gradlew.bat assembleDebug` con resultado `BUILD SUCCESSFUL`, antes de los ajustes locales de colores. La compilación de esos ajustes en esta carpeta no se ha comprobado en esta revisión. Se revisó por código el recorrido del ID, la consulta por clave primaria, la presentación de campos, la eliminación por capas y la recarga de Home. No se ejecutaron pruebas unitarias ni instrumentadas.
-- Sigue pendiente documentar la prueba manual con dos citas distintas: abrir cada detalle, comprobar sus campos e imagen, cancelar y confirmar el borrado, verificar que solo desaparece la cita seleccionada y comprobar la navegación al placeholder de edición. Compilar no demuestra estos resultados en ejecución.
+- Sigue pendiente documentar la prueba manual con dos citas distintas: abrir cada detalle, comprobar sus campos e imagen, cancelar y confirmar el borrado y verificar que solo desaparece la cita seleccionada. Compilar no demuestra estos resultados en ejecución.
+- En el worktree aislado de HU-5, `gradlew.bat assembleDebug` terminó con `BUILD SUCCESSFUL`. El responsable también reportó compilación y revisión visual. Después aplicó el ajuste de restauración del formulario en DogApp y reportó compilación correcta; se comprobó ese cambio mediante revisión de código. No se ejecutaron pruebas unitarias ni instrumentadas.
+- Para HU-5, documentar por separado: edición sin cambiar raza, edición con nueva raza e imagen, conservación de ID y síntoma, ausencia de filas duplicadas, regreso a Home, errores de catálogo/imagen/actualización y conservación del borrador al rotar. La restauración tras recreación del proceso y la recepción tardía de la cita siguen pendientes de comprobación en ejecución.
 
 ## Historias de usuario
 
@@ -88,10 +91,10 @@ Base existente y piezas previstas:
 | Paquete | Existente | Pendiente |
 | --- | --- | --- |
 | `ui.adapter` / `ui.viewholder` | `CitaAdapter`, `CitaViewHolder` con Glide | Reutilizar la presentación sin acceso directo a Room/API |
-| `viewmodel` | `LoginViewModel`, `CitaViewModel` con consultas, guardado, selección por ID y resultado de eliminación | Coordinación y resultado de edición de HU-5 |
-| `repository` | `CitaRepository` con consultas, inserción, actualización y eliminación; `RazaRepository` con razas e imágenes | Reutilizar la actualización en HU-5 |
+| `viewmodel` | `LoginViewModel`, `CitaViewModel` con consultas, guardado, detalle, eliminación y edición | Mantener contratos y documentar validaciones pendientes |
+| `repository` | `CitaRepository` con consultas, inserción, actualización y eliminación; `RazaRepository` con razas e imágenes | Conservar el acceso a datos compartido |
 | `model` | Entidad Room `Cita`; `DogBreedsResponse`, `DogImageResponse` | Conservar los contratos al ampliar las HU |
-| `data` | `CitaDao` con consultas, inserción, `@Update` y `@Delete`; `DogAppDB` | Reutilizar el DAO en HU-5 sin duplicar entidad o base |
+| `data` | `CitaDao` con consultas, inserción, `@Update` con filas afectadas y `@Delete`; `DogAppDB` | No duplicar entidad o base ni cambiar el esquema sin acuerdo |
 | `utils` | `Constants` con nombre de base, URL y endpoints | Añadir constantes solo cuando sean necesarias |
 | `webservice` | `DogApiService`, `RetrofitClient` | Reutilizar el cliente existente |
 
@@ -112,7 +115,7 @@ Flujo de operaciones: **Fragment → ViewModel → Repository → Room/API**. La
 
 - El Fragment lee campos, registra eventos, muestra datos/mensajes y navega. No consulta directamente el DAO, la base de datos o Retrofit.
 - El Adapter y el ViewHolder presentan las citas y notifican la selección al Fragment; no realizan operaciones de datos.
-- `CitaViewModel` coordina las operaciones y validaciones y usa `viewModelScope`. Publica `citas`, `razas`, `guardando`, `citaGuardada`, `errorNuevaCita`, `citaSeleccionada` y `citaEliminada` mediante LiveData con MutableLiveData privados. No conserva referencias a Fragments, vistas o bindings.
+- `CitaViewModel` coordina las operaciones y validaciones y usa `viewModelScope`. Publica listas, estados de Home, `guardando` y resultados de creación, detalle, eliminación y edición mediante LiveData con MutableLiveData privados. HU-5 añade `citaActualizada` y `errorEditarCita`. No conserva referencias a Fragments, vistas o bindings.
 - `CitaRepository` concentra las operaciones locales. `RazaRepository` concentra las consultas de razas e imágenes. Room y la red se usan de forma asíncrona, sin bloquear el hilo principal.
 - Cada Fragment de citas obtiene su instancia de `CitaViewModel` con `by viewModels()`. No asumir que son la misma instancia: los datos actuales se recuperan desde Room a través del ViewModel y el Repository.
 - Observar LiveData con `viewLifecycleOwner` y liberar la referencia al binding en `onDestroyView`.
@@ -142,16 +145,27 @@ Antes de conectar las pantallas, acordar en la tarea compartida los nombres, par
 - HU-3 implementa el servicio Retrofit, los modelos de respuesta y `RazaRepository`. El ViewModel coordina la obtención de la URL y el guardado local; el Fragment no accede directamente a la API ni al DAO.
 - HU-3 persiste `imagenUrl` junto con la cita. Home recibe ese dato a través de Room y lo muestra con Glide; no solicita otra imagen aleatoria al mostrar cada tarjeta.
 - El guardado correcto regresa al Home existente para que recargue sus citas. No se necesita enviar una lista entre Fragments ni compartir la misma instancia de ViewModel.
-- El contrato detallado se mantiene en el documento compartido del equipo. La inserción, la consulta de detalle y la eliminación ya están implementadas en esta rama; HU-5 debe reutilizar estas piezas y coordinar sus firmas, sin crear otra entidad o base.
+- El contrato detallado se mantiene en el documento compartido del equipo. La inserción, la consulta de detalle, la eliminación y la edición reutilizan las mismas piezas en esta rama. Sincronizar las firmas implementadas con el documento; las propuestas anteriores no son exigencias literales del profesor.
 
 ### Integración de HU-4 con Home y HU-5
 
 - [DetalleFragment](app/src/main/java/com/example/dogapp/ui/detalle/DetalleFragment.kt) recibe `citaId: Int`, llama a `cargarCitaPorId(citaId)` y observa `citaSeleccionada: LiveData<Cita?>` con `viewLifecycleOwner`. Presenta todos los campos del registro recuperado y carga `imagenUrl` mediante Glide, con imagen de reemplazo durante la carga o ante un fallo de descarga.
 - El borrado sigue `DetalleFragment` → `CitaViewModel.eliminarCita(cita)` → `CitaRepository.eliminarCita(cita)` → `CitaDao.eliminarCita(cita)`. Repository utiliza `withContext(Dispatchers.IO)` y el DAO declara `@Delete suspend fun eliminarCita(cita: Cita)` con retorno Unit. No se comprueba el número de filas afectadas.
 - La confirmación previa es una opción permitida por el PDF. Al completar la operación, el ViewModel publica `citaEliminada = true`; el Fragment muestra el mensaje, llama a `consumirCitaEliminada()` y regresa mediante `navigateUp()`. Home recarga en `onStart()`; no se modifica manualmente la lista ni se comparte automáticamente el ViewModel entre pantallas.
-- El botón Editar envía el mismo `citaId` mediante `action_detalleFragment_to_editarCitaFragment`. HU-5 conserva su placeholder: deberá leer ese argumento, consultar el registro y coordinar la actualización. DAO y Repository ya ofrecen `suspend fun actualizarCita(cita: Cita)`; esto no significa que la edición completa esté implementada.
-- Limitaciones conocidas que se mantienen fuera de los ajustes actuales: un ID ausente o igual a `-1` regresa a la pantalla anterior; si un ID consultado no existe, no hay respuesta visual específica. Los errores de consulta y eliminación se registran en Logcat, sin mensaje al usuario. Los botones no tienen bloqueo de operación en curso, aunque sus listeners requieren una `citaActual` no nula. No se incorporan estados adicionales en esta revisión.
+- El botón Editar envía el mismo `citaId` mediante `action_detalleFragment_to_editarCitaFragment`. El destino declara el argumento entero y HU-5 consulta Room mediante su instancia de ViewModel y el Repository compartido.
+- Limitaciones conocidas de Detalle: un ID ausente o igual a `-1` regresa a la pantalla anterior; si un ID consultado no existe, no hay respuesta visual específica. Los errores de consulta y eliminación se registran en Logcat, sin mensaje al usuario. Los botones de Detalle no tienen bloqueo de operación en curso, aunque sus listeners requieren una `citaActual` no nula.
 - La presentación local utiliza fondo blanco, toolbar gris y el recurso `appointment_dark_blue` para el botón Editar. Estos ajustes de recursos no implican una prueba visual completada; sigue pendiente comprobar la apariencia y el margen interior de la imagen en ejecución.
+
+### Edición de citas: HU-5
+
+- [EditarCitaFragment](app/src/main/java/com/example/dogapp/ui/editarcita/EditarCitaFragment.kt) usa Data Binding, observa con `viewLifecycleOwner` y libera el binding en `onDestroyView()`. Precarga los cuatro campos desde `citaSeleccionada`; no accede al DAO ni a Retrofit.
+- `formularioPrecargado` distingue la carga inicial del borrador restaurado. Se guarda en `onSaveInstanceState()` y se recupera al recrear la vista; Android conserva el texto mediante los IDs de los campos. El observador recalcula la habilitación del botón incluso si no debe repetir la precarga. Es un ajuste de ciclo de vida del equipo, no una exigencia literal del ejemplo del profesor.
+- El ViewModel ofrece `actualizarCita(nombreMascota: String, raza: String, nombrePropietario: String, telefono: String)`. Valida campos y catálogo, bloquea operaciones simultáneas con `guardando` y usa `original.copy(...)` para conservar el ID y el síntoma.
+- Si cambia la raza, reutiliza `RazaRepository.obtenerImagenRaza(...)`; un fallo o una URL vacía impiden actualizar. Si la raza no cambia, conserva `imagenUrl`. La validación actual requiere catálogo cargado incluso para editar únicamente nombre, propietario o teléfono; la edición sin conexión no está garantizada.
+- DAO y Repository ofrecen `suspend fun actualizarCita(cita: Cita): Int`. El DAO usa `@Update` y el Repository `withContext(Dispatchers.IO)`. El ViewModel exige una fila afectada antes de publicar `citaActualizada = true`; no anuncia éxito si Room no encontró el registro.
+- `consumirCitaActualizada()` y `consumirErrorEditarCita()` limpian los resultados atendidos. El Fragment muestra el éxito y ejecuta `popBackStack(R.id.homeFragment, false)`, retirando Editar y Detalle. Home consulta de nuevo en `onStart()`.
+- Ante un error de actualización se conservan los campos y se muestra un mensaje; `finally` libera `guardando`. Los errores al cargar el catálogo se reciben mediante el estado existente `errorNuevaCita`. Si falla la consulta inicial de la cita o no existe, todavía no hay una respuesta visual específica y el botón permanece protegido por la ausencia de selección.
+- El retorno de filas afectadas, las firmas concretas y la política de imagen son decisiones de DogApp compatibles con MVVM. El patrón del curso que se conserva es Fragment → ViewModel con LiveData/corrutinas → Repository → DAO/servicio; no se añaden capas ni dependencias.
 
 ## Navegación
 
@@ -225,7 +239,7 @@ El PDF oficial de historias y rúbrica es la fuente de requisitos; Jira organiza
 2. Sincronizar Gradle con los archivos actuales del proyecto.
 3. Ejecutar la aplicación en un emulador o dispositivo compatible con `minSdk 24`.
 
-Para probar Login se necesita autenticación biométrica disponible y configurada. La lectura de citas usa Room local; crear una cita requiere cargar el catálogo y obtener su URL de imagen mediante Internet. Ver la imagen con Glide también necesita acceso a su URL, salvo que ya esté disponible en caché. Esta rama implementa creación, detalle y eliminación; la pantalla y el flujo completo de edición siguen pendientes de HU-5.
+Para probar Login se necesita autenticación biométrica disponible y configurada. La lectura de citas usa Room local; crear una cita requiere cargar el catálogo y obtener su URL de imagen mediante Internet. Editar requiere cargar el catálogo y, si cambia la raza, obtener otra URL. Ver la imagen con Glide también necesita acceso a su URL, salvo que ya esté disponible en caché. Esta rama implementa creación, detalle, eliminación y edición; consultar la sección de validación para distinguir implementación, pruebas reportadas y comprobaciones pendientes.
 
 ## Seguimiento
 

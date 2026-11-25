@@ -1,5 +1,6 @@
 package com.example.dogapp.utils
 
+// Compartido: nombre estable de Room y rutas de API usadas por HU-3/HU-5.
 object Constants {
     const val NAME_BD = "dogapp_database"
 

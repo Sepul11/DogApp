@@ -1,4 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!-- Compartido: destinos de HU-1 a HU-5; Login es la entrada inicial. -->
 <navigation xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
@@ -11,6 +12,7 @@
         android:label="Login"
         tools:layout="@layout/fragment_login" />
 
+    <!-- HU-2 inicia creación (HU-3) o consulta de detalle (HU-4). -->
     <fragment
         android:id="@+id/homeFragment"
         android:name="com.example.dogapp.ui.home.HomeFragment"
@@ -33,6 +35,7 @@
         android:label="Nueva Cita"
         tools:layout="@layout/fragment_nueva_cita" />
 
+    <!-- HU-4 recibe el ID persistido; el mismo argumento se envia a HU-5. -->
     <fragment
         android:id="@+id/detalleFragment"
         android:name="com.example.dogapp.ui.detalle.DetalleFragment"
@@ -49,11 +52,16 @@
 
     </fragment>
 
+    <!-- HU-5 retira Editar y Detalle tras actualizar; popBackStack se solicita en Kotlin. -->
     <fragment
         android:id="@+id/editarCitaFragment"
         android:name="com.example.dogapp.ui.editarcita.EditarCitaFragment"
         android:label="Editar Cita"
-        tools:layout="@layout/fragment_editar_cita" />
+        tools:layout="@layout/fragment_editar_cita">
 
+        <argument
+            android:name="citaId"
+            app:argType="integer" />
 
+    </fragment>
 </navigation>

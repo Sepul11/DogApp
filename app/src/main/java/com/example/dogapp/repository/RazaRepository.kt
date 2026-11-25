@@ -5,6 +5,7 @@ import com.example.dogapp.webservice.RetrofitClient
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
+// HU-3/HU-5: consulta y transforma respuestas remotas; no conoce vistas ni navegación.
 class RazaRepository {
 
     suspend fun obtenerRazas(): List<String> {
@@ -17,6 +18,7 @@ class RazaRepository {
                 )
             }
 
+            // Convierte el mapa remoto en opciones del autocompletado: raza o raza subraza.
             respuesta.message.flatMap { (raza, subrazas) ->
                 if (subrazas.isEmpty()) {
                     listOf(raza)
@@ -39,6 +41,7 @@ class RazaRepository {
                 .split(" ")
                 .filter { it.isNotBlank() }
 
+            // Selecciona el endpoint de raza o subraza según la opción del catálogo.
             val respuesta = when (partesRaza.size) {
                 1 -> RetrofitClient.api.obtenerImagenRaza(
                     partesRaza[0]

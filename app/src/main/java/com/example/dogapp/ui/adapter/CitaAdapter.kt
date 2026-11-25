@@ -7,6 +7,7 @@ import com.example.dogapp.databinding.ItemCitaBinding
 import com.example.dogapp.model.Cita
 import com.example.dogapp.ui.viewholder.CitaViewHolder
 
+// HU-2: conecta la lista con tarjetas reciclables y entrega la selección al Fragment.
 class CitaAdapter(
     private val alSeleccionarCita: (Int) -> Unit
 ) : RecyclerView.Adapter<CitaViewHolder>() {
@@ -37,6 +38,7 @@ class CitaAdapter(
         return citas.size
     }
 
+    // Sustituye los datos presentados; cambiar esta lista no escribe en Room.
     fun actualizarCitas(nuevasCitas: List<Cita>) {
         citas = nuevasCitas.toList()
         notifyDataSetChanged()

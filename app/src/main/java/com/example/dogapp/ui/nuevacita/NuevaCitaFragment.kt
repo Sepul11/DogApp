@@ -17,8 +17,10 @@ import com.example.dogapp.model.Cita
 import com.example.dogapp.viewmodel.CitaViewModel
 import com.example.dogapp.R
 
+// HU-3: recoge campos y observa resultados; el ViewModel coordina API y guardado.
 class NuevaCitaFragment : Fragment() {
 
+    // El binding generado conecta Kotlin con el XML; solo se usa mientras existe la vista.
     private var _binding: FragmentNuevaCitaBinding? = null
     private val binding get() = _binding!!
 
@@ -51,6 +53,7 @@ class NuevaCitaFragment : Fragment() {
         citaViewModel.cargarRazas()
     }
 
+    // Catalogo local de recursos; solo las razas se consultan por API.
     private fun configurarSintomas() {
         val sintomas = resources.getStringArray(R.array.sintomas)
 
@@ -68,6 +71,7 @@ class NuevaCitaFragment : Fragment() {
         }
     }
 
+    // La UI comprueba campos presentes; el ViewModel valida la raza antes de persistir.
     private fun configurarValidaciones() {
         binding.actvRaza.threshold = 2
 
@@ -124,6 +128,7 @@ class NuevaCitaFragment : Fragment() {
             binding.actvRaza.setAdapter(adaptador)
         }
 
+        // Solo el resultado de Room permite anunciar éxito y volver a Home.
         citaViewModel.citaGuardada.observe(viewLifecycleOwner) { guardada ->
             if (guardada == true) {
 
@@ -181,6 +186,7 @@ class NuevaCitaFragment : Fragment() {
             return
         }
 
+        // La URL vacía es provisional: el ViewModel debe obtenerla antes de insertar.
         val nuevaCita = Cita(
             nombreMascota = binding.etNombreMascota.text
                 .toString().trim(),
@@ -197,6 +203,7 @@ class NuevaCitaFragment : Fragment() {
         citaViewModel.guardarCita(nuevaCita)
     }
 
+    // El Fragment puede seguir en la pila sin su vista; libera el binding para no retenerla.
     override fun onDestroyView() {
         super.onDestroyView()
         _binding = null
